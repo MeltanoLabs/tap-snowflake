@@ -3,9 +3,11 @@
 This includes SnowflakeStream and SnowflakeConnector.
 """
 
-import sqlalchemy
+from typing import Any, Dict, Iterable, Optional
 
+import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream
+from snowflake.sqlalchemy import URL
 
 
 class SnowflakeConnector(SQLConnector):
@@ -13,36 +15,17 @@ class SnowflakeConnector(SQLConnector):
 
     def get_sqlalchemy_url(cls, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
-        # TODO: Replace this with a valid connection string for your source:
-        return (
-            f"awsathena+rest://{config['aws_access_key_id']}:"
-            f"{config['aws_secret_access_key']}@athena"
-            f".{config['aws_region']}.amazonaws.com:443/"
-            f"{config['schema_name']}?"
-            f"s3_staging_dir={config['s3_staging_dir']}"
-        )
+        params = {
+            "account": config["account"],
+            "user": config["user"],
+            "password": config["password"],
+        }
 
-    @staticmethod
-    def to_jsonschema_type(sql_type: sqlalchemy.types.TypeEngine) -> dict:
-        """Returns a JSON Schema equivalent for the given SQL type.
+        for option in ["database", "schema", "warehouse", "role"]:
+            if config.get(option):
+                params[option] = config.get(option)
 
-        Developers may optionally add custom logic before calling the default
-        implementation inherited from the base class.
-        """
-        # Optionally, add custom logic before calling the super().
-        # You may delete this method if overrides are not needed.
-        return super().to_jsonschema_type(sql_type)
-
-    @staticmethod
-    def to_sql_type(jsonschema_type: dict) -> sqlalchemy.types.TypeEngine:
-        """Returns a JSON Schema equivalent for the given SQL type.
-
-        Developers may optionally add custom logic before calling the default
-        implementation inherited from the base class.
-        """
-        # Optionally, add custom logic before calling the super().
-        # You may delete this method if overrides are not needed.
-        return super().to_sql_type(jsonschema_type)
+        return URL(**params)
 
 
 class SnowflakeStream(SQLStream):

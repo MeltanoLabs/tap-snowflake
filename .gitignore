@@ -1,9 +1,13 @@
 # Secrets and internal config files
 **/.secrets/*
+config.json
+catalog.json
 
 # Ignore meltano internal cache and sqlite systemdb
-
 .meltano/
+
+# IDEs
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

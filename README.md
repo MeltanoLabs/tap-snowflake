@@ -6,17 +6,13 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 
 ## Installation
 
-- [ ] `Developer TODO:` Update the below as needed to correctly describe the install procedure. For instance, if you do not have a PyPi repo, or if you want users to directly install from your git repo, you can modify this step as appropriate.
-
 ```bash
-pipx install tap-snowflake
+pipx install git+https://github.com/MeltanoLabs/tap-snowflake.git
 ```
 
 ## Configuration
 
 ### Accepted Config Options
-
-- [ ] `Developer TODO:` Provide a list of config options accepted by the tap.
 
 A full list of supported settings and capabilities for this
 tap is available by running:
@@ -61,7 +57,7 @@ poetry install
 ### Create and Run Tests
 
 Create tests within the `tap_snowflake/tests` subfolder and
-  then run:
+then run:
 
 ```bash
 poetry run pytest

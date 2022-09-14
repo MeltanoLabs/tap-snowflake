@@ -2,38 +2,64 @@
 
 from typing import List
 
-from singer_sdk import SQLTap, SQLStream
+from singer_sdk import SQLStream, SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
+
 from tap_snowflake.client import SnowflakeStream
 
 
 class TapSnowflake(SQLTap):
     """Snowflake tap class."""
-    name = "tap-snowflake"
 
-    # TODO: Update this section with the actual config values you expect:
+    name = "tap-snowflake"
+    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters
     config_jsonschema = th.PropertiesList(
         th.Property(
-            "auth_token",
+            "user",
             th.StringType,
             required=True,
-            description="The token to authenticate against the API service"
+            description="The login name for your Snowflake user.",
         ),
         th.Property(
-            "project_ids",
-            th.ArrayType(th.StringType),
+            "password",
+            th.StringType,
             required=True,
-            description="Project IDs to replicate"
+            description="The password for your Snowflake user.",
+        ),
+        th.Property(
+            "account",
+            th.StringType,
+            required=True,
+            description="Your account identifier. See [Account Identifiers](https://docs.snowflake.com/en/user-guide/admin-account-identifier.html).",
+        ),
+        th.Property(
+            "database",
+            th.StringType,
+            description="The initial database for the Snowflake session.",
+        ),
+        th.Property(
+            "schema",
+            th.StringType,
+            description="The initial schema for the Snowflake session.",
+        ),
+        th.Property(
+            "warehouse",
+            th.StringType,
+            description="The initial warehouse for the session.",
+        ),
+        th.Property(
+            "role",
+            th.StringType,
+            description="The initial role for the session.",
         ),
         th.Property(
             "start_date",
             th.DateTimeType,
-            description="The earliest record date to sync"
-        ),
-        th.Property(
-            "api_url",
-            th.StringType,
-            default="https://api.mysample.com",
-            description="The url for the API service"
+            description="The earliest record date to sync.",
         ),
     ).to_dict()
+    default_stream_class = SnowflakeStream
+
+
+if __name__ == "__main__":
+    TapSnowflake.cli()
