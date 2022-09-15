@@ -5,6 +5,7 @@ This includes SnowflakeStream and SnowflakeConnector.
 
 from __future__ import annotations
 
+import os
 from typing import Any, Dict, Iterable, Optional
 from uuid import uuid4
 
@@ -69,8 +70,9 @@ class SnowflakeStream(SQLStream):
         # download available files
         files = []
         for result in results:
-            file_name = result[0]
-            self.connector.connection.execute(text(f"get '@~/{file_name}' '{root}/'"))
+            file_path = result[0]
+            file_name = os.path.basename(file_path)
+            self.connector.connection.execute(text(f"get '@~/{file_path}' '{root}/'"))
             files.append(f"{root}/{file_name}")
         # remove staged files
         self.connector.connection.execute(text(f"remove '@~/tap-snowflake/{sync_id}/'"))
