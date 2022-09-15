@@ -1,4 +1,12 @@
 [[package]]
+name = "appdirs"
+version = "1.4.4"
+description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "asn1crypto"
 version = "1.5.1"
 description = "Fast ASN.1 parser and serializer with definitions for private keys, public keys, certificates, CRL, OCSP, CMS, PKCS#3, PKCS#7, PKCS#8, PKCS#12, PKCS#5, X.509 and TSP"
@@ -181,6 +189,22 @@ importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 mccabe = ">=0.6.0,<0.7.0"
 pycodestyle = ">=2.7.0,<2.8.0"
 pyflakes = ">=2.3.0,<2.4.0"
+
+[[package]]
+name = "fs"
+version = "2.4.16"
+description = "Python's filesystem abstraction layer"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+appdirs = ">=1.4.3,<1.5.0"
+setuptools = "*"
+six = ">=1.10,<2.0"
+
+[package.extras]
+scandir = ["scandir (>=1.5,<2.0)"]
 
 [[package]]
 name = "greenlet"
@@ -633,27 +657,35 @@ version = "0.10.0"
 description = "A framework for building Singer taps"
 category = "main"
 optional = false
-python-versions = ">=3.7.1,<3.11"
+python-versions = "<3.11,>=3.7.1"
+develop = false
 
 [package.dependencies]
 backoff = ">=1.8.0,<2.0"
-click = ">=8.0,<9.0"
-cryptography = ">=3.4.6,<38.0.0"
+click = "~=8.0"
+cryptography = ">=3.4.6,<39.0.0"
+fs = "^2.4.16"
 importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
-inflection = ">=0.5.1,<0.6.0"
-joblib = ">=1.0.1,<2.0.0"
-jsonpath-ng = ">=1.5.3,<2.0.0"
+inflection = "^0.5.1"
+joblib = "^1.0.1"
+jsonpath-ng = "^1.5.3"
 memoization = ">=0.3.2,<0.5.0"
-pendulum = ">=2.1.0,<3.0.0"
+pendulum = "^2.1.0"
 pipelinewise-singer-python = "1.2.0"
-PyJWT = ">=2.4,<3.0"
-python-dotenv = ">=0.20.0,<0.21.0"
-requests = ">=2.25.1,<3.0.0"
-sqlalchemy = ">=1.4,<2.0"
-typing-extensions = ">=4.2.0,<5.0.0"
+PyJWT = "~=2.4"
+python-dotenv = ">=0.20,<0.22"
+requests = "^2.25.1"
+sqlalchemy = "^1.4"
+typing-extensions = "^4.2.0"
 
 [package.extras]
 docs = ["myst-parser (>=0.17.2,<0.19.0)", "sphinx (>=4.5,<6.0)", "sphinx-autobuild (>=2021.3.14,<2022.0.0)", "sphinx-copybutton (>=0.3.1,<0.6.0)", "sphinx-rtd-theme (>=0.5.2,<1.1.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/meltano/sdk.git"
+reference = "HEAD"
+resolved_reference = "5bab2d857c4d272b56371566f7e835736927c1ea"
 
 [[package]]
 name = "six"
@@ -872,9 +904,13 @@ testing = ["func-timeout", "jaraco.itertools", "pytest (>=6)", "pytest-black (>=
 [metadata]
 lock-version = "1.1"
 python-versions = "<3.11,>=3.7.1"
-content-hash = "e77000a95bfc60143ca868d2f9e8914c5146d547e03b35291d6914d38831d354"
+content-hash = "f46f1c8eba6dcce00aee48cf634a3c72be24ba3dd1c81685e562469b73f444f8"
 
 [metadata.files]
+appdirs = [
+    {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
+    {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
+]
 asn1crypto = [
     {file = "asn1crypto-1.5.1-py2.py3-none-any.whl", hash = "sha256:db4e40728b728508912cbb3d44f19ce188f218e9eba635821bb4b68564f8fd67"},
     {file = "asn1crypto-1.5.1.tar.gz", hash = "sha256:13ae38502be632115abf8a24cbe5f4da52e3b5231990aff31123c805306ccb9c"},
@@ -1016,6 +1052,10 @@ filelock = [
 flake8 = [
     {file = "flake8-3.9.2-py2.py3-none-any.whl", hash = "sha256:bf8fd333346d844f616e8d47905ef3a3384edae6b4e9beb0c5101e25e3110907"},
     {file = "flake8-3.9.2.tar.gz", hash = "sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b"},
+]
+fs = [
+    {file = "fs-2.4.16-py2.py3-none-any.whl", hash = "sha256:660064febbccda264ae0b6bace80a8d1be9e089e0a5eb2427b7d517f9a91545c"},
+    {file = "fs-2.4.16.tar.gz", hash = "sha256:ae97c7d51213f4b70b6a958292530289090de3a7e15841e108fbe144f069d313"},
 ]
 greenlet = [
     {file = "greenlet-1.1.3-cp27-cp27m-macosx_10_14_x86_64.whl", hash = "sha256:8c287ae7ac921dfde88b1c125bd9590b7ec3c900c2d3db5197f1286e144e712b"},
@@ -1327,10 +1367,7 @@ simplejson = [
     {file = "simplejson-3.11.1.win32-py3.4.exe", hash = "sha256:97cc43ef4cb18a2725f6e26d22b96f8ca50872a195bde32707dcb284f89c1d4d"},
     {file = "simplejson-3.11.1.win32-py3.5.exe", hash = "sha256:c76d55d78dc8b06c96fd08c6cc5e2b0b650799627d3f9ca4ad23f40db72d5f6d"},
 ]
-singer-sdk = [
-    {file = "singer-sdk-0.10.0.tar.gz", hash = "sha256:347b34d37541cd55678af3e574807c45b539cd538a91f28f36e0c0c51676098d"},
-    {file = "singer_sdk-0.10.0-py3-none-any.whl", hash = "sha256:f9db52db23a07f9243ed6be5dd9ed5b204a9eef48ef49d0c4f8f1d809e0df44e"},
-]
+singer-sdk = []
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
