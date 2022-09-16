@@ -7,18 +7,21 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Iterable, List
 from uuid import uuid4
 
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
+from singer_sdk.helpers._singer import SelectionMask
 from snowflake.sqlalchemy import URL
+from sqlalchemy import exc
 from sqlalchemy.sql import text
 
 
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
+    @classmethod
     def get_sqlalchemy_url(cls, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
         params = {
@@ -50,9 +53,16 @@ class SnowflakeStream(SQLStream):
     def get_batches(
         self, batch_config: BatchConfig, context: dict | None = None
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
-        return self.get_batches_from_internal_stage(batch_config, context)
+        """Get batches of Records from Snowflake.
 
-    def get_batches_from_internal_stage(
+        Currently this returns records batches unloaded via an internal user stage.
+        In future this can be updated to include new methods for unloading via external stages.
+        For more details on batch unloading data from Snowflake, see the Snowflake docs:
+        https://docs.snowflake.com/en/user-guide-data-unload.html
+        """
+        return self.get_batches_from_internal_user_stage(batch_config, context)
+
+    def get_batches_from_internal_user_stage(
         self, batch_config: BatchConfig, context: dict | None = None
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Unload Snowflake table to User Internal Stage, and download files to local storage.
@@ -72,26 +82,30 @@ class SnowflakeStream(SQLStream):
         columns = [col.name for col in table.columns]
         selected_columns = self.get_selected_columns(columns=columns, mask=self.mask)
         objects = [f"'{col}', {col}" for col in selected_columns]
-        # unload table into user internal stage
-        copy_statement = text(
-            f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from (select object_construct({', '.join(objects)}) from {table_name}) file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
-        )
-        self.connector.connection.execute(copy_statement)
-        # list available files
-        results = self.connector.connection.execute(
-            text(f"list '@~/tap-snowflake/{sync_id}/'")
-        )
-        # download available files
         files = []
-        local_path = f"{root.replace('file://', '')}/{sync_id}"
-        Path(local_path).mkdir(parents=True, exist_ok=True)
-        for result in results:
-            stage_path = result[0]
-            file_name = os.path.basename(stage_path)
-            self.connector.connection.execute(
-                text(f"get '@~/{stage_path}' '{root}/{sync_id}'")
+        try:
+            # unload table into user internal stage
+            copy_statement = text(
+                f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from (select object_construct({', '.join(objects)}) from {table_name}) file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
             )
-            files.append(f"{root}/{sync_id}/{file_name}")
-        # remove staged files
-        self.connector.connection.execute(text(f"remove '@~/tap-snowflake/{sync_id}/'"))
+            self.connector.connection.execute(copy_statement)
+            # list available files
+            results = self.connector.connection.execute(
+                text(f"list '@~/tap-snowflake/{sync_id}/'")
+            )
+            # download available files
+            local_path = f"{root.replace('file://', '')}/{sync_id}"
+            Path(local_path).mkdir(parents=True, exist_ok=True)
+            for result in results:
+                stage_path = result[0]
+                file_name = os.path.basename(stage_path)
+                self.connector.connection.execute(
+                    text(f"get '@~/{stage_path}' '{root}/{sync_id}'")
+                )
+                files.append(f"{root}/{sync_id}/{file_name}")
+        finally:
+            # remove staged files
+            self.connector.connection.execute(
+                text(f"remove '@~/tap-snowflake/{sync_id}/'")
+            )
         yield (batch_config.encoding, files)
