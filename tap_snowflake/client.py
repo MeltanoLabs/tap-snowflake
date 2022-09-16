@@ -42,7 +42,9 @@ class SelectableSQLStream(SQLStream):
 
     def get_selected_columns(self, table) -> List:
         """Filter column list according to selection criteria."""
-        return [col for col in table.columns if self.mask[("properties", col.name)]]
+        return [
+            col.name for col in table.columns if self.mask[("properties", col.name)]
+        ]
 
     def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
