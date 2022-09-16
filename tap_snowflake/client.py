@@ -12,10 +12,9 @@ from uuid import uuid4
 
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
-from singer_sdk.helpers._singer import SelectionMask
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
-from sqlalchemy import exc
+from sqlalchemy.orm import load_only
 from sqlalchemy.sql import text
 
 
@@ -38,18 +37,59 @@ class SnowflakeConnector(SQLConnector):
         return URL(**params)
 
 
-class SnowflakeStream(SQLStream):
+class SelectableSQLStream(SQLStream):
+    """Patches the parent classes get_records method to support stream property selection."""
+
+    def get_selected_columns(self, table) -> List:
+        """Filter column list according to selection criteria."""
+        return [col for col in table.columns if self.mask[("properties", col.name)]]
+
+    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
+        """Return a generator of record-type dictionary objects.
+
+        If the stream has a replication_key value defined, records will be sorted by the
+        incremental key. If the stream also has an available starting bookmark, the
+        records will be filtered for values greater than or equal to the bookmark value.
+
+        Args:
+            context: If partition context is provided, will read specifically from this
+                data slice.
+
+        Yields:
+            One dict per record.
+
+        Raises:
+            NotImplementedError: If partition is passed in context and the stream does
+                not support partitioning.
+        """
+        if context:
+            raise NotImplementedError(
+                f"Stream '{self.name}' does not support partitioning."
+            )
+
+        table = self.connector.get_table(self.fully_qualified_name)
+        query = table.select()
+        selected_columns = self.get_selected_columns(table=table)
+        query = query.options(load_only(*selected_columns))
+        if self.replication_key:
+            replication_key_col = table.columns[self.replication_key]
+            query = query.order_by(replication_key_col)
+            start_val = (
+                self.get_starting_timestamp(context=context)
+                if self.is_timestamp_replication_key
+                else self.get_starting_replication_key_value(context=context)
+            )
+            if start_val:
+                query = query.filter(replication_key_col >= start_val)
+
+        for record in self.connector.connection.execute(query):
+            yield dict(record)
+
+
+class SnowflakeStream(SelectableSQLStream):
     """Stream class for Snowflake streams."""
 
     connector_class = SnowflakeConnector
-
-    def get_selected_columns(
-        self,
-        columns: List[str],
-        mask: SelectionMask,
-    ) -> List[str]:
-        """Filter column list according to selection criteria."""
-        return [col for col in columns if mask[("properties", col)]]
 
     def get_batches(
         self, batch_config: BatchConfig, context: dict | None = None
@@ -61,6 +101,10 @@ class SnowflakeStream(SQLStream):
         For more details on batch unloading data from Snowflake, see the Snowflake docs:
         https://docs.snowflake.com/en/user-guide-data-unload.html
         """
+        if context:
+            raise NotImplementedError(
+                f"Stream '{self.name}' does not support partitioning."
+            )
         return self.get_batches_from_internal_user_stage(batch_config, context)
 
     @staticmethod
@@ -87,29 +131,13 @@ class SnowflakeStream(SQLStream):
         replication_key_value,
     ) -> Tuple[text, dict]:
         """Get INCREMENTAL copy statement and key bindings."""
-        binding = {}
-        if self.is_timestamp_replication_key:
-            replication_column = next(
-                (c for c in table.columns if c.name == self.replication_key)
-            )
-            # binding to python datetime requires the target snowflake type
-            # https://docs.snowflake.com/en/user-guide/python-connector-example.html#using-qmark-or-numeric-binding-with-datetime-objects
-            binding = {
-                "replication_key_value": (
-                    replication_column.type,
-                    replication_key_value,
-                )
-            }
-        else:
-            binding = replication_key_value
-
         return (
             text(
                 f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "
-                + f"(select object_construct({', '.join(objects)}) from {table_name} where {self.replication_key} >= :replication_key_value) "
+                + f"(select object_construct({', '.join(objects)}) from {table_name} where {self.replication_key} >= :replication_key_value order by {self.replication_key})"
                 + "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
             ),
-            binding,
+            {"replication_key_value": replication_key_value},
         )
 
     def _get_copy_statement(
@@ -118,8 +146,7 @@ class SnowflakeStream(SQLStream):
         """Construct copy statement, taking into account stream property selection and incremental keys."""
         table_name = self.fully_qualified_name
         table = self.connector.get_table(table_name)
-        columns = [col.name for col in table.columns]
-        selected_columns = self.get_selected_columns(columns=columns, mask=self.mask)
+        selected_columns = self.get_selected_columns(table=table)
         objects = [f"'{col}', {col}" for col in selected_columns]
 
         if self.replication_method == REPLICATION_FULL_TABLE:
@@ -148,7 +175,7 @@ class SnowflakeStream(SQLStream):
                     table_name=table_name,
                 )
         else:
-            raise ValueError(
+            raise NotImplementedError(
                 "Only 'FULL_TABLE' and 'INCREMENTAL' replication strategies are supported by this tap."
             )
 
