@@ -2,6 +2,8 @@
 **/.secrets/*
 config.json
 catalog.json
+state.json
+meltano.yml
 
 # Ignore meltano internal cache and sqlite systemdb
 .meltano/

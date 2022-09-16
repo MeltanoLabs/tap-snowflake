@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 from uuid import uuid4
 
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.helpers._singer import SelectionMask
+from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
 from sqlalchemy import exc
 from sqlalchemy.sql import text
@@ -62,6 +63,95 @@ class SnowflakeStream(SQLStream):
         """
         return self.get_batches_from_internal_user_stage(batch_config, context)
 
+    @staticmethod
+    def _get_full_table_copy_statement(
+        sync_id: str, prefix: str, objects: str, table_name: str
+    ) -> Tuple[text, dict]:
+        """Get FULL_TABLE copy statement and key bindings."""
+        return (
+            text(
+                f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "
+                + f"(select object_construct({', '.join(objects)}) from {table_name}) "
+                + "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
+            ),
+            {},
+        )
+
+    def _get_incremental_copy_statement(
+        self,
+        sync_id: str,
+        prefix: str,
+        objects: str,
+        table_name: str,
+        table,
+        replication_key_value,
+    ) -> Tuple[text, dict]:
+        """Get INCREMENTAL copy statement and key bindings."""
+        binding = {}
+        if self.is_timestamp_replication_key:
+            replication_column = next(
+                (c for c in table.columns if c.name == self.replication_key)
+            )
+            # binding to python datetime requires the target snowflake type
+            # https://docs.snowflake.com/en/user-guide/python-connector-example.html#using-qmark-or-numeric-binding-with-datetime-objects
+            binding = {
+                "replication_key_value": (
+                    replication_column.type,
+                    replication_key_value,
+                )
+            }
+        else:
+            binding = replication_key_value
+
+        return (
+            text(
+                f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "
+                + f"(select object_construct({', '.join(objects)}) from {table_name} where {self.replication_key} >= :replication_key_value) "
+                + "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
+            ),
+            binding,
+        )
+
+    def _get_copy_statement(
+        self, sync_id: str, prefix: str, context: dict | None = None
+    ) -> Tuple[text, dict]:
+        """Construct copy statement, taking into account stream property selection and incremental keys."""
+        table_name = self.fully_qualified_name
+        table = self.connector.get_table(table_name)
+        columns = [col.name for col in table.columns]
+        selected_columns = self.get_selected_columns(columns=columns, mask=self.mask)
+        objects = [f"'{col}', {col}" for col in selected_columns]
+
+        if self.replication_method == REPLICATION_FULL_TABLE:
+            return self._get_full_table_copy_statement()
+
+        elif self.replication_method == REPLICATION_INCREMENTAL:
+            replication_key_value = (
+                self.get_starting_timestamp(context=context)
+                if self.is_timestamp_replication_key
+                else self.get_starting_replication_key_value(context=context)
+            )
+            if replication_key_value:
+                return self._get_incremental_copy_statement(
+                    sync_id=sync_id,
+                    prefix=prefix,
+                    objects=objects,
+                    table_name=table_name,
+                    table=table,
+                    replication_key_value=replication_key_value,
+                )
+            else:
+                return self._get_full_table_copy_statement(
+                    sync_id=sync_id,
+                    prefix=prefix,
+                    objects=objects,
+                    table_name=table_name,
+                )
+        else:
+            raise ValueError(
+                "Only 'FULL_TABLE' and 'INCREMENTAL' replication strategies are supported by this tap."
+            )
+
     def get_batches_from_internal_user_stage(
         self, batch_config: BatchConfig, context: dict | None = None
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
@@ -76,19 +166,14 @@ class SnowflakeStream(SQLStream):
         root = batch_config.storage.root
         sync_id = f"{self.tap_name}--{self.name}-{uuid4()}"
         prefix = batch_config.storage.prefix or ""
-        table_name = self.fully_qualified_name
         # prepare object_construct statement
-        table = self.connector.get_table(self.fully_qualified_name)
-        columns = [col.name for col in table.columns]
-        selected_columns = self.get_selected_columns(columns=columns, mask=self.mask)
-        objects = [f"'{col}', {col}" for col in selected_columns]
         files = []
         try:
             # unload table into user internal stage
-            copy_statement = text(
-                f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from (select object_construct({', '.join(objects)}) from {table_name}) file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
+            copy_statement, kwargs = self._get_copy_statement(
+                sync_id=sync_id, prefix=prefix, context=context
             )
-            self.connector.connection.execute(copy_statement)
+            self.connector.connection.execute(copy_statement, **kwargs)
             # list available files
             results = self.connector.connection.execute(
                 text(f"list '@~/tap-snowflake/{sync_id}/'")
