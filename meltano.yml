@@ -1,0 +1,32 @@
+version: 1
+send_anonymous_usage_stats: true
+project_id: tap-snowflake
+plugins:
+  extractors:
+  - name: tap-snowflake
+    namespace: tap_snowflake
+    pip_url: -e .
+    capabilities:
+    - state
+    - catalog
+    - discover
+    settings:
+    - name: user
+    - name: password
+      kind: password
+    - name: account
+      kind: password
+    - name: role
+    - name: warehouse
+    - name: database
+    - name: schema
+    config:
+      role: MELTANO
+      warehouse: LOADER
+      database: RAW
+  loaders:
+  - name: target-jsonl
+    variant: andyh1203
+    pip_url: target-jsonl
+environments:
+- name: dev

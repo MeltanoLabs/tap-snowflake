@@ -52,11 +52,6 @@ class TapSnowflake(SQLTap):
             th.StringType,
             description="The initial role for the session.",
         ),
-        th.Property(
-            "start_date",
-            th.DateTimeType,
-            description="The earliest record date to sync.",
-        ),
     ).to_dict()
     default_stream_class = SnowflakeStream
 

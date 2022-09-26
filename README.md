@@ -29,7 +29,47 @@ environment variable is set either in the terminal context or in the `.env` file
 
 ### Source Authentication and Authorization
 
-- [ ] `Developer TODO:` If your tap requires special access on the source system, or any special authentication requirements, provide those here.
+Standard `username` and `password` auth is supported.
+
+### Enabling Batch Messaging
+
+This tap is built using the Meltano SDK and therefore supports a `BATCH` [message type](https://sdk.meltano.com/en/latest/batch.html), in
+addition to the `RECORD` messages of the Singer spec. This can be enabled either by adding the following to your `config.json`:
+
+```json
+{
+  // ...
+  "batch_config": {
+    "encoding": {
+      "format": "jsonl",
+      "compression": "gzip"
+    },
+    "storage": {
+      "root": "file://tests/core/resources",
+      "prefix": "test-batch"
+    }
+  }
+}
+```
+
+or its equivalent to your `meltano.yml`
+
+```yaml
+config:
+  plugins:
+    extractors:
+      - name: tap-snowflake
+        config:
+          batch_config:
+            encoding:
+              format: jsonl
+              compression: gzip
+            storage:
+              root: "file://tests/core/resources"
+              prefix: test-batch
+```
+
+**Note:** This variant of `tap-snowflake` does not yet support the `INCREMENTAL` replication strategy in `BATCH` mode. Follow [here](https://github.com/meltano/sdk/issues/976#issuecomment-1257848119) for updates.
 
 ## Usage
 
@@ -44,8 +84,6 @@ tap-snowflake --config CONFIG --discover > ./catalog.json
 ```
 
 ## Developer Resources
-
-- [ ] `Developer TODO:` As a first step, scan the entire project for the text "`TODO:`" and complete any recommended steps, deleting the "TODO" references once completed.
 
 ### Initialize your Development Environment
 
