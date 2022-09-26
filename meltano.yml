@@ -20,10 +20,6 @@ plugins:
     - name: warehouse
     - name: database
     - name: schema
-    config:
-      role: MELTANO
-      warehouse: LOADER
-      database: RAW
   loaders:
   - name: target-jsonl
     variant: andyh1203
