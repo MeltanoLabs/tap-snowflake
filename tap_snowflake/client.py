@@ -152,7 +152,12 @@ class SnowflakeStream(SelectableSQLStream):
         objects = [f"'{col}', {col}" for col in selected_columns]
 
         if self.replication_method == REPLICATION_FULL_TABLE:
-            return self._get_full_table_copy_statement()
+            return self._get_full_table_copy_statement(
+                sync_id=sync_id,
+                prefix=prefix,
+                objects=objects,
+                table_name=table_name,
+            )
 
         elif self.replication_method == REPLICATION_INCREMENTAL:
             replication_key_value = (
