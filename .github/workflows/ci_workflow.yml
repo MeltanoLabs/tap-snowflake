@@ -36,6 +36,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      SF_USER: ${{secrets.SF_USER}}
+      SF_PASSWORD: ${{secrets.SF_PASSWORD}}
+      SF_ACCOUNT: ${{secrets.SF_ACCOUNT}}
+      SF_DATABASE: ${{secrets.SF_DATABASE}}
+      SF_SCHEMA: ${{secrets.SF_SCHEMA}}
+      SF_WAREHOUSE: ${{secrets.SF_WAREHOUSE}}
+      SF_ROLE: ${{secrets.SF_ROLE}}
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
