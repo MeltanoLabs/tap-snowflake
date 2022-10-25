@@ -37,58 +37,7 @@ class SnowflakeConnector(SQLConnector):
         return URL(**params)
 
 
-class SelectableSQLStream(SQLStream):
-    """Patches the parent classes get_records method to support stream property selection."""
-
-    def get_selected_columns(self, table) -> List:
-        """Filter column list according to selection criteria."""
-        return [
-            col.name for col in table.columns if self.mask[("properties", col.name)]
-        ]
-
-    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
-        """Return a generator of record-type dictionary objects.
-
-        If the stream has a replication_key value defined, records will be sorted by the
-        incremental key. If the stream also has an available starting bookmark, the
-        records will be filtered for values greater than or equal to the bookmark value.
-
-        Args:
-            context: If partition context is provided, will read specifically from this
-                data slice.
-
-        Yields:
-            One dict per record.
-
-        Raises:
-            NotImplementedError: If partition is passed in context and the stream does
-                not support partitioning.
-        """
-        if context:
-            raise NotImplementedError(
-                f"Stream '{self.name}' does not support partitioning."
-            )
-
-        table = self.connector.get_table(self.fully_qualified_name)
-        query = table.select()
-        selected_columns = self.get_selected_columns(table=table)
-        query = query.options(load_only(*selected_columns))
-        if self.replication_key:
-            replication_key_col = table.columns[self.replication_key]
-            query = query.order_by(replication_key_col)
-            start_val = (
-                self.get_starting_timestamp(context=context)
-                if self.is_timestamp_replication_key
-                else self.get_starting_replication_key_value(context=context)
-            )
-            if start_val:
-                query = query.filter(replication_key_col >= start_val)
-
-        for record in self.connector.connection.execute(query):
-            yield dict(record)
-
-
-class SnowflakeStream(SelectableSQLStream):
+class SnowflakeStream(SQLStream):
     """Stream class for Snowflake streams."""
 
     connector_class = SnowflakeConnector
