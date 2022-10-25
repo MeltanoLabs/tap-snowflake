@@ -1,8 +1,6 @@
 """Snowflake tap class."""
 
-from typing import List
-
-from singer_sdk import SQLStream, SQLTap
+from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
 
 from tap_snowflake.client import SnowflakeStream
@@ -12,7 +10,7 @@ class TapSnowflake(SQLTap):
     """Snowflake tap class."""
 
     name = "tap-snowflake"
-    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters
+    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
     config_jsonschema = th.PropertiesList(
         th.Property(
             "user",
@@ -30,7 +28,7 @@ class TapSnowflake(SQLTap):
             "account",
             th.StringType,
             required=True,
-            description="Your account identifier. See [Account Identifiers](https://docs.snowflake.com/en/user-guide/admin-account-identifier.html).",
+            description="Your account identifier. See [Account Identifiers](https://docs.snowflake.com/en/user-guide/admin-account-identifier.html).",  # noqa: E501
         ),
         th.Property(
             "database",

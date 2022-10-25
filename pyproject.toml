@@ -36,4 +36,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 # CLI declaration
-tap-snowflake = 'tap_snowflake.tap:TapSnowflake.cli'
+tap-snowflake = "tap_snowflake.tap:TapSnowflake.cli"

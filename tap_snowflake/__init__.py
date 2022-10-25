@@ -1,0 +1,1 @@
+"""Snowflake Singer Tap."""

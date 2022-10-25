@@ -14,7 +14,6 @@ from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
-from sqlalchemy.orm import load_only
 from sqlalchemy.sql import text
 
 
@@ -48,8 +47,11 @@ class SnowflakeStream(SQLStream):
         """Get batches of Records from Snowflake.
 
         Currently this returns records batches unloaded via an internal user stage.
-        In future this can be updated to include new methods for unloading via external stages.
-        For more details on batch unloading data from Snowflake, see the Snowflake docs:
+        In future this can be updated to include new methods forunloading via
+        external stages.
+
+        For more details on batch unloading data from Snowflake,
+        see the Snowflake docs:
         https://docs.snowflake.com/en/user-guide-data-unload.html
         """
         if context:
@@ -60,7 +62,7 @@ class SnowflakeStream(SQLStream):
 
     @staticmethod
     def _get_full_table_copy_statement(
-        sync_id: str, prefix: str, objects: str, table_name: str
+        sync_id: str, prefix: str, objects: List[str], table_name: str
     ) -> Tuple[text, dict]:
         """Get FULL_TABLE copy statement and key bindings."""
         return (
@@ -76,16 +78,18 @@ class SnowflakeStream(SQLStream):
         self,
         sync_id: str,
         prefix: str,
-        objects: str,
+        objects: List[str],
         table_name: str,
-        table,
         replication_key_value,
     ) -> Tuple[text, dict]:
         """Get INCREMENTAL copy statement and key bindings."""
         return (
             text(
                 f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "
-                + f"(select object_construct({', '.join(objects)}) from {table_name} where {self.replication_key} >= :replication_key_value order by {self.replication_key})"
+                + f"(select object_construct({', '.join(objects)}) "
+                + f"from {table_name} "
+                + f"where {self.replication_key} >= :replication_key_value "
+                + f"order by {self.replication_key}) "
                 + "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
             ),
             {"replication_key_value": replication_key_value},
@@ -94,18 +98,19 @@ class SnowflakeStream(SQLStream):
     def _get_copy_statement(
         self, sync_id: str, prefix: str, context: dict | None = None
     ) -> Tuple[text, dict]:
-        """Construct copy statement, taking into account stream property selection and incremental keys."""
-        table_name = self.fully_qualified_name
-        table = self.connector.get_table(table_name)
-        selected_columns = self.get_selected_columns(table=table)
-        objects = [f"'{col}', {col}" for col in selected_columns]
+        """Construct copy statement.
+
+        Takes into account stream property selection and incremental keys.
+        """
+        selected_schema = self.get_selected_schema()
+        objects = [f"'{col}', {col}" for col in selected_schema["properties"].keys()]
 
         if self.replication_method == REPLICATION_FULL_TABLE:
             return self._get_full_table_copy_statement(
                 sync_id=sync_id,
                 prefix=prefix,
                 objects=objects,
-                table_name=table_name,
+                table_name=self.fully_qualified_name,
             )
 
         elif self.replication_method == REPLICATION_INCREMENTAL:
@@ -119,8 +124,7 @@ class SnowflakeStream(SQLStream):
                     sync_id=sync_id,
                     prefix=prefix,
                     objects=objects,
-                    table_name=table_name,
-                    table=table,
+                    table_name=self.fully_qualified_name,
                     replication_key_value=replication_key_value,
                 )
             else:
@@ -128,11 +132,12 @@ class SnowflakeStream(SQLStream):
                     sync_id=sync_id,
                     prefix=prefix,
                     objects=objects,
-                    table_name=table_name,
+                    table_name=self.fully_qualified_name,
                 )
         else:
             raise NotImplementedError(
-                "Only 'FULL_TABLE' and 'INCREMENTAL' replication strategies are supported by this tap."
+                "Only 'FULL_TABLE' and 'INCREMENTAL' replication strategies "
+                "are supported by this tap."
             )
 
     def get_batches_from_internal_user_stage(
@@ -144,7 +149,7 @@ class SnowflakeStream(SQLStream):
         for each user.
 
         More details on how this works can be found in the Snowflake docs:
-        https://docs.snowflake.com/en/user-guide/data-unload-snowflake.html#unloading-data-to-your-user-stage
+        https://docs.snowflake.com/en/user-guide/data-unload-snowflake.html#unloading-data-to-your-user-stage  # noqa: E501
         """
         root = batch_config.storage.root
         sync_id = f"{self.tap_name}--{self.name}-{uuid4()}"
