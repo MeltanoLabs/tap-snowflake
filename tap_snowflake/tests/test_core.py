@@ -1,11 +1,18 @@
 """Tests standard tap features using the built-in SDK tests library."""
+import os
 
 from singer_sdk.testing import get_standard_tap_tests
 
 from tap_snowflake.tap import TapSnowflake
 
 SAMPLE_CONFIG = {
-    # TODO: Initialize minimal tap config
+    "user": os.getenv("SF_USER"),
+    "password": os.getenv("SF_PASSWORD"),
+    "account": os.getenv("SF_ACCOUNT"),
+    "database": os.getenv("SF_DATABASE"),
+    "schema": os.getenv("SF_SCHEMA"),
+    "warehouse": os.getenv("SF_WAREHOUSE"),
+    "role": os.getenv("SF_ROLE"),
 }
 
 
@@ -15,6 +22,3 @@ def test_standard_tap_tests():
     tests = get_standard_tap_tests(TapSnowflake, config=SAMPLE_CONFIG)
     for test in tests:
         test()
-
-
-# TODO: Create additional tests as appropriate for your tap.
