@@ -10,7 +10,6 @@ SAMPLE_CONFIG = {
     "password": os.getenv("SF_PASSWORD"),
     "account": os.getenv("SF_ACCOUNT"),
     "database": os.getenv("SF_DATABASE"),
-    "schema": os.getenv("SF_SCHEMA"),
     "warehouse": os.getenv("SF_WAREHOUSE"),
     "role": os.getenv("SF_ROLE"),
 }

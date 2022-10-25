@@ -40,7 +40,6 @@ jobs:
       SF_PASSWORD: ${{secrets.SF_PASSWORD}}
       SF_ACCOUNT: ${{secrets.SF_ACCOUNT}}
       SF_DATABASE: ${{secrets.SF_DATABASE}}
-      SF_SCHEMA: ${{secrets.SF_SCHEMA}}
       SF_WAREHOUSE: ${{secrets.SF_WAREHOUSE}}
       SF_ROLE: ${{secrets.SF_ROLE}}
     strategy:
