@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Iterable, List, Tuple
 from uuid import uuid4
 
+import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
@@ -34,6 +35,46 @@ class SnowflakeConnector(SQLConnector):
                 params[option] = config.get(option)
 
         return URL(**params)
+
+    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
+        """Return a new SQLAlchemy engine using the provided config.
+
+        Developers can generally override just one of the following:
+        `sqlalchemy_engine`, sqlalchemy_url`.
+
+        Returns:
+            A newly created SQLAlchemy engine object.
+        """
+        return sqlalchemy.create_engine(
+            self.sqlalchemy_url, echo=False, pool_timeout=10
+        )
+
+    # overridden to filter out the information_schema from catalog discovery
+    def discover_catalog_entries(self) -> list[dict]:
+        """Return a list of catalog entries from discovery.
+
+        Returns:
+            The discovered catalog entries as a list.
+        """
+        result: list[dict] = []
+        engine = self.create_sqlalchemy_engine()
+        inspected = sqlalchemy.inspect(engine)
+        schema_names = [
+            schema_name
+            for schema_name in self.get_schema_names(engine, inspected)
+            if schema_name.lower() != "information_schema"
+        ]
+        for schema_name in schema_names:
+            # Iterate through each table and view
+            for table_name, is_view in self.get_object_names(
+                engine, inspected, schema_name
+            ):
+                catalog_entry = self.discover_catalog_entry(
+                    engine, inspected, schema_name, table_name, is_view
+                )
+                result.append(catalog_entry.to_dict())
+
+        return result
 
 
 class SnowflakeStream(SQLStream):
