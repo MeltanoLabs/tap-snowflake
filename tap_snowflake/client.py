@@ -88,7 +88,7 @@ class SnowflakeStream(SQLStream):
         """Get batches of Records from Snowflake.
 
         Currently this returns records batches unloaded via an internal user stage.
-        In future this can be updated to include new methods forunloading via
+        In future this can be updated to include new methods for unloading via
         external stages.
 
         For more details on batch unloading data from Snowflake,
