@@ -12,7 +12,7 @@ license = "Apache 2.0"
 [tool.poetry.dependencies]
 python = "<3.11,>=3.7.1"
 requests = "^2.25.1"
-singer-sdk = {git = "https://github.com/meltano/sdk.git", rev = "kgpayne/issue1110"}
+singer-sdk = {git = "https://github.com/meltano/sdk.git"}
 snowflake-sqlalchemy = "^1.4.3"
 snowflake-connector-python = "^2.8.0"
 
