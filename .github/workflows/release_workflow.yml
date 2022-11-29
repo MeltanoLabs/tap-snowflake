@@ -26,4 +26,4 @@ jobs:
       run: |
         poetry version $(git describe --tags --abbrev=0)
         poetry build
-        poetry publish -r test-pypi --username __token___ --password ${{ secrets.TEST_PYPI_PASSWORD }}
+        poetry publish -r test-pypi --username __token___ --password ${{ secrets.TEST_PYPI_TOKEN }}
