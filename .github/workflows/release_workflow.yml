@@ -27,4 +27,4 @@ jobs:
         poetry config repositories.testpypi https://test.pypi.org/legacy/
         poetry version $(git describe --tags --abbrev=0)
         poetry build
-        poetry publish -r testpypi --username __token___ --password ${{ secrets.TEST_PYPI_TOKEN }}
+        poetry publish -r testpypi -u "__token__" -p "${{ secrets.TEST_PYPI_TOKEN }}"
