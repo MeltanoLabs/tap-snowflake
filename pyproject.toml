@@ -8,6 +8,9 @@ keywords = [
     "Snowflake",
 ]
 license = "Apache 2.0"
+packages = [
+    { include = "tap_snowflake" },
+]
 
 [tool.poetry.dependencies]
 python = "<3.11,>=3.7.1"
