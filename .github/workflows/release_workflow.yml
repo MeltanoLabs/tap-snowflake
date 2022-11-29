@@ -24,6 +24,7 @@ jobs:
         pip install poetry
     - name: Build and publish package
       run: |
+        poetry config repositories.test-pypi https://test.pypi.org/legacy/
         poetry version $(git describe --tags --abbrev=0)
         poetry build
         poetry publish -r test-pypi --username __token___ --password ${{ secrets.TEST_PYPI_TOKEN }}
