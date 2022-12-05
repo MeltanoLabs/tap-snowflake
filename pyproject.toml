@@ -45,4 +45,3 @@ tap-snowflake = "tap_snowflake.tap:TapSnowflake.cli"
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
-style = "semver"
