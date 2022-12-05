@@ -2,6 +2,7 @@
 name = "meltanolabs-tap-snowflake"
 version = "0.0.0"
 description = "`tap-snowflake` is a Singer tap for Snowflake, built with the Meltano SDK for Singer Taps."
+readme = "README.md"
 authors = ["Ken Payne"]
 keywords = [
     "ELT",

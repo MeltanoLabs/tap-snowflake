@@ -23,6 +23,7 @@ jobs:
         pip install poetry
     - name: Build package
       run: |
+        poetry self add "poetry-dynamic-versioning[plugin]"
         poetry config repositories.testpypi https://test.pypi.org/legacy/
         poetry dynamic-versioning --no-cache
         poetry build
