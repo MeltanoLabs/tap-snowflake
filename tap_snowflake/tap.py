@@ -12,6 +12,7 @@ class TapSnowflake(SQLTap):
     """Snowflake tap class."""
 
     name = "tap-snowflake"
+    package_name = "meltanolabs-tap-snowflake"
 
     # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
     config_jsonschema = th.PropertiesList(
@@ -56,6 +57,7 @@ class TapSnowflake(SQLTap):
     ).to_dict()
     default_stream_class = SnowflakeStream
 
+    # TODO: remove once PR merges; https://github.com/meltano/sdk/pull/1241
     @classproperty
     def plugin_version(cls) -> str:
         """Get version.
@@ -64,7 +66,7 @@ class TapSnowflake(SQLTap):
             The package version number.
         """
         try:
-            version = metadata.version(__package__ or cls.name)
+            version = metadata.version(cls.package_name or cls.name)
         except metadata.PackageNotFoundError:
             version = "[could not be detected]"
         return version
