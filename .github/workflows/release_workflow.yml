@@ -24,7 +24,7 @@ jobs:
     - name: Build package
       run: |
         poetry config repositories.testpypi https://test.pypi.org/legacy/
-        poetry version $(git describe --tags --abbrev=0)
+        poetry dynamic-versioning --no-cache
         poetry build
     - name: Upload wheel to release
       uses: svenstaro/upload-release-action@v2

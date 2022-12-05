@@ -11,7 +11,9 @@ from tap_snowflake.client import SnowflakeStream
 class TapSnowflake(SQLTap):
     """Snowflake tap class."""
 
+    __version__ = "0.0.0"  # managed by poetry-dynamic-versioning
     name = "tap-snowflake"
+
     # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
     config_jsonschema = th.PropertiesList(
         th.Property(
@@ -62,11 +64,7 @@ class TapSnowflake(SQLTap):
         Returns:
             The package version number.
         """
-        try:
-            version = metadata.version(__package__ or cls.name)
-        except metadata.PackageNotFoundError:
-            version = "[could not be detected]"
-        return version
+        return cls.__version__
 
 
 if __name__ == "__main__":
