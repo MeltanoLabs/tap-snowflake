@@ -2,6 +2,8 @@
 
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
+from singer_sdk.helpers._classproperty import classproperty
+from singer_sdk.helpers._compat import metadata
 
 from tap_snowflake.client import SnowflakeStream
 
@@ -52,6 +54,19 @@ class TapSnowflake(SQLTap):
         ),
     ).to_dict()
     default_stream_class = SnowflakeStream
+
+    @classproperty
+    def plugin_version(cls) -> str:
+        """Get version.
+
+        Returns:
+            The package version number.
+        """
+        try:
+            version = metadata.version(__package__ or cls.name)
+        except metadata.PackageNotFoundError:
+            version = "[could not be detected]"
+        return version
 
 
 if __name__ == "__main__":
