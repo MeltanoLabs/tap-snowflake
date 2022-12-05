@@ -5,13 +5,13 @@ from singer_sdk import typing as th  # JSON schema typing helpers
 from singer_sdk.helpers._classproperty import classproperty
 from singer_sdk.helpers._compat import metadata
 
+from tap_snowflake import __version__
 from tap_snowflake.client import SnowflakeStream
 
 
 class TapSnowflake(SQLTap):
     """Snowflake tap class."""
 
-    __version__ = "0.0.0"  # managed by poetry-dynamic-versioning
     name = "tap-snowflake"
 
     # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
@@ -64,7 +64,7 @@ class TapSnowflake(SQLTap):
         Returns:
             The package version number.
         """
-        return cls.__version__
+        return __version__
 
 
 if __name__ == "__main__":
