@@ -45,9 +45,3 @@ tap-snowflake = "tap_snowflake.tap:TapSnowflake.cli"
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
-
-[tool.poetry-dynamic-versioning.substitution]
-files = ["__init__.py"]
-folders = [
-  { path = "tap_snowflake" }
-]
