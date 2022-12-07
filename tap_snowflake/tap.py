@@ -1,24 +1,9 @@
 """Snowflake tap class."""
 
-
-import collections
-from typing import List, Mapping
-
 from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
-from singer_sdk.helpers._classproperty import classproperty
-from singer_sdk.helpers._compat import metadata
 
 from tap_snowflake.client import SnowflakeStream
-
-
-# Introduced in python 3.10, added here for compatability
-def packages_distributions() -> Mapping[str, List[str]]:
-    pkg_to_dist = collections.defaultdict(list)
-    for dist in metadata.distributions():
-        for pkg in (dist.read_text("top_level.txt") or "").split():
-            pkg_to_dist[pkg].append(dist.metadata["Name"])
-    return dict(pkg_to_dist)
 
 
 class TapSnowflake(SQLTap):
@@ -69,27 +54,6 @@ class TapSnowflake(SQLTap):
         ),
     ).to_dict()
     default_stream_class = SnowflakeStream
-
-    # TODO: remove once PR merges; https://github.com/meltano/sdk/pull/1241
-    @classproperty
-    def plugin_version(cls) -> str:
-        """Get version.
-
-        Returns:
-            The package version number.
-        """
-        # try to discover distribution version
-        distribution_map = packages_distributions()
-        distribution = distribution_map.get(cls.name.replace("-", "_"), [None])[0]
-        if distribution:
-            version = metadata.version(distribution)
-        else:
-            # try to discover module version
-            try:
-                version = metadata.version(cls.name)
-            except metadata.PackageNotFoundError:
-                version = "[could not be detected]"
-        return version
 
 
 if __name__ == "__main__":
