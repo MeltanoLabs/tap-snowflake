@@ -6,16 +6,42 @@ This includes SnowflakeStream and SnowflakeConnector.
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 
 import sqlalchemy
-from singer_sdk import SQLConnector, SQLStream
+from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
+
+
+class ProfileStats(Enum):
+    TABLE_SIZE_IN_MB = auto()
+    TABLE_ROW_COUNT = auto()
+    COLUMN_MIN_VALUE = auto()
+    COLUMN_MAX_VALUE = auto()
+    COLUMN_NULL_VALUES = auto()
+    COLUMN_NONNULL_VALUES = auto()
+
+
+@dataclass
+class ColumnProfile:
+    min_value: int | None
+    max_value: int | None
+    null_values: int | None
+    nonnull_values: int | None
+
+
+@dataclass
+class TableProfile:
+    column_profiles: dict[str, ColumnProfile]
+    row_count: int | None
+    size_in_mb: int | None
 
 
 class SnowflakeConnector(SQLConnector):
@@ -76,11 +102,130 @@ class SnowflakeConnector(SQLConnector):
 
         return result
 
+    def get_table_profile(
+        self,
+        full_table_name: str,
+        stats: set[ProfileStats],
+        profile_columns: list[str] | None = None,
+    ) -> TableProfile:
+        """Scan source system for a set of profile stats.
+
+        This is a proposed implementation to eventually be included in the SDK.
+
+        This generic implementation should be compatible with most/all SQL providers, as
+        it only requires min(), max(), and count() support, which are all part of ANSI
+        SQL.
+
+        Developers may override this for performance improvements on their native SQL
+        implementation.
+
+        Any stats not requested but available 'for free' while collecting other stats
+        may be included in the returned profile. For example, the base implementation
+        cannot calculate COLUMN_NULL_VALUES without also calculating TABLE_ROW_COUNT and
+        COLUMN_NONNULL_VALUES. The additional stats therefor be returned along with the
+        requested stats. The consumer should ignore or disregard any stats not needed.
+
+        Note: Gathering stats can take a long time. The implementation should attempt
+        to combine stats gathering into fewer tables scans where possible and only
+        spend time pulling in requested stats.
+
+        Returns:
+            A TableProfile object. Stats may be left null if not requested, not
+            available, or not implemented. Callers should check each field for null
+            values and handle null as 'not available'.
+        """
+        profile_columns = profile_columns or []
+        expressions: list[str] = []
+        if (
+            ProfileStats.TABLE_ROW_COUNT in stats
+            or ProfileStats.COLUMN_NULL_VALUES in stats
+        ):
+            expressions.append("count(1) as row_count")
+        if ProfileStats.TABLE_SIZE_IN_MB in stats:
+            self.logger.debug(
+                "TABLE_SIZE_IN_MB stats not implemented for this provider."
+            )
+        for col in profile_columns or []:
+            if ProfileStats.COLUMN_MIN_VALUE in stats:
+                expressions.append(f"min({col}) as min__{col}")
+            if ProfileStats.COLUMN_MAX_VALUE in stats:
+                expressions.append(f"max({col}) as max__{col}")
+            if (
+                ProfileStats.COLUMN_NONNULL_VALUES in stats
+                or ProfileStats.COLUMN_NULL_VALUES in stats
+            ):
+                expressions.append(f"count({col}) as nonnull__{col}")
+            if ProfileStats.COLUMN_NULL_VALUES in stats:
+                expressions.append(f"count(1) - count({col}) as null__{col}")
+        result_dict = self.connection.scalars(
+            text(f"SELECT {', '.join(expressions)}) FROM {full_table_name})")
+        )
+        return TableProfile(
+            row_count=result_dict.get("row_count", None),
+            size_in_mb=result_dict.get("size_in_mb", None),
+            column_profiles={
+                col: ColumnProfile(
+                    min_value=result_dict.get(f"min__{col}", None),
+                    max_value=result_dict.get(f"max__{col}", None),
+                    null_values=result_dict.get(f"null__{col}", None),
+                    nonnull_values=result_dict.get(f"nonnull__{col}", None),
+                )
+                for col in profile_columns
+            },
+        )
+
 
 class SnowflakeStream(SQLStream):
     """Stream class for Snowflake streams."""
 
     connector_class = SnowflakeConnector
+
+    def _sync_batches(
+        self,
+        batch_config: BatchConfig,
+        context: dict | None = None,
+    ) -> None:
+        """Sync batches, emitting BATCH messages.
+
+        This is a proposed replacement for the SDK internal SQLStream._sync_baches.
+        Per: https://github.com/meltano/sdk/issues/976
+
+        This version stores the max replication value before batch sync starts, and then
+        increments the stream state with this value after the sync operation completes.
+
+        Since any FULL_TABLE sync operations may subsequently be run as INCREMENTAL,
+        the querying of the max value is not dependent upon running in INCREMENTAL mode.
+
+        Args:
+            batch_config: The batch configuration.
+            context: Stream partition or context dictionary.
+        """
+        # New: Collect the max value for the replication column.
+        if self.replication_key:
+            table_profile: TableProfile = self.connector.get_table_profile(
+                full_table_name=self.fully_qualified_name,
+                stats={ProfileStats.COLUMN_MAX_VALUE},
+                profile_columns=[self.replication_key],
+            )
+            max_replication_key_value = table_profile.column_profiles[
+                self.replication_key
+            ].max_value
+
+        # Not chanded: Note that the STATE messages will not have an incremented
+        # replication key value at this point.
+        with metrics.batch_counter(self.name, context=context) as counter:
+            for encoding, manifest in self.get_batches(batch_config, context):
+                counter.increment()
+                self._write_batch_message(encoding=encoding, manifest=manifest)
+                self._write_state_message()
+
+        # New: Increment and emit the final STATE message after sync has completed.
+        if max_replication_key_value:
+            self._increment_stream_state(
+                latest_record={self.replication_key: max_replication_key_value},
+                context=context,
+            )
+        self._write_state_message()
 
     def get_batches(
         self, batch_config: BatchConfig, context: dict | None = None
