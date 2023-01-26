@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 
 import sqlalchemy
@@ -223,3 +223,53 @@ class SnowflakeStream(SQLStream):
                 text(f"remove '@~/tap-snowflake/{sync_id}/'")
             )
         yield (batch_config.encoding, files)
+
+    # overridden to not return empty records
+    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
+        """Return a generator of record-type dictionary objects.
+
+        If the stream has a replication_key value defined, records will be sorted by the
+        incremental key. If the stream also has an available starting bookmark, the
+        records will be filtered for values greater than or equal to the bookmark value.
+
+        Args:
+            context: If partition context is provided, will read specifically from this
+                data slice.
+
+        Yields:
+            One dict per record.
+
+        Raises:
+            NotImplementedError: If partition is passed in context and the stream does
+                not support partitioning.
+        """
+        if context:
+            raise NotImplementedError(
+                f"Stream '{self.name}' does not support partitioning."
+            )
+
+        selected_column_names = self.get_selected_schema()["properties"].keys()
+        table = self.connector.get_table(
+            full_table_name=self.fully_qualified_name,
+            column_names=selected_column_names,
+        )
+        query = table.select()
+
+        if self.replication_key:
+            replication_key_col = table.columns[self.replication_key]
+            query = query.order_by(replication_key_col)
+
+            start_val = self.get_starting_replication_key_value(context)
+            if start_val:
+                query = query.where(
+                    sqlalchemy.text(":replication_key >= :start_val").bindparams(
+                        replication_key=replication_key_col, start_val=start_val
+                    )
+                )
+
+        if self._MAX_RECORDS_LIMIT is not None:
+            query = query.limit(self._MAX_RECORDS_LIMIT)
+
+        for record in self.connector.connection.execute(query):
+            if record:
+                yield dict(record)
