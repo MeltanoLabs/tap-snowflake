@@ -1286,8 +1286,8 @@ testing = ["pytest (>=7.2.1,<8.0.0)", "pytest-durations (>=1.2.0,<2.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/meltano/sdk.git"
-reference = "kgpayne/issue1169"
-resolved_reference = "cf15bae07843585327237493d6af83aa2377a749"
+reference = "kgpayne/investigate-jsondecode-bug"
+resolved_reference = "2d9e76841e35cc8541a9526d816652c9fdfcbd23"
 
 [[package]]
 name = "six"
@@ -1651,4 +1651,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.11,>=3.7.1"
-content-hash = "c889669f4bbba3cf507e7ec874a28d2b5e4bead66a245b701dcf5e8f1bd71581"
+content-hash = "713f76c45ef103dff88ce8f82100886cf8a52a33fdba3cabb7888901a009b201"
