@@ -1,0 +1,808 @@
+{
+  "streams": [
+    {
+      "tap_stream_id": "tpch_sf1-customer",
+      "table_name": "customer",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "c_custkey": {
+            "type": ["number"]
+          },
+          "c_name": {
+            "type": ["string"]
+          },
+          "c_address": {
+            "type": ["string"]
+          },
+          "c_nationkey": {
+            "type": ["number"]
+          },
+          "c_phone": {
+            "type": ["string"]
+          },
+          "c_acctbal": {
+            "type": ["number"]
+          },
+          "c_mktsegment": {
+            "type": ["string", "null"]
+          },
+          "c_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "c_custkey",
+          "c_name",
+          "c_address",
+          "c_nationkey",
+          "c_phone",
+          "c_acctbal"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-customer",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "c_custkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_name"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_address"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_nationkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_phone"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_acctbal"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_mktsegment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "c_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-lineitem",
+      "table_name": "lineitem",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "l_orderkey": {
+            "type": ["number"]
+          },
+          "l_partkey": {
+            "type": ["number"]
+          },
+          "l_suppkey": {
+            "type": ["number"]
+          },
+          "l_linenumber": {
+            "type": ["number"]
+          },
+          "l_quantity": {
+            "type": ["number"]
+          },
+          "l_extendedprice": {
+            "type": ["number"]
+          },
+          "l_discount": {
+            "type": ["number"]
+          },
+          "l_tax": {
+            "type": ["number"]
+          },
+          "l_returnflag": {
+            "type": ["string"]
+          },
+          "l_linestatus": {
+            "type": ["string"]
+          },
+          "l_shipdate": {
+            "format": "date",
+            "type": ["string"]
+          },
+          "l_commitdate": {
+            "format": "date",
+            "type": ["string"]
+          },
+          "l_receiptdate": {
+            "format": "date",
+            "type": ["string"]
+          },
+          "l_shipinstruct": {
+            "type": ["string"]
+          },
+          "l_shipmode": {
+            "type": ["string"]
+          },
+          "l_comment": {
+            "type": ["string"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "l_orderkey",
+          "l_partkey",
+          "l_suppkey",
+          "l_linenumber",
+          "l_quantity",
+          "l_extendedprice",
+          "l_discount",
+          "l_tax",
+          "l_returnflag",
+          "l_linestatus",
+          "l_shipdate",
+          "l_commitdate",
+          "l_receiptdate",
+          "l_shipinstruct",
+          "l_shipmode",
+          "l_comment"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-lineitem",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "l_orderkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_partkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_suppkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_linenumber"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_quantity"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_extendedprice"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_discount"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_tax"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_returnflag"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_linestatus"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_shipdate"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_commitdate"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_receiptdate"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_shipinstruct"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_shipmode"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "l_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1",
+            "selected": false
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-nation",
+      "table_name": "nation",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "n_nationkey": {
+            "type": ["number"]
+          },
+          "n_name": {
+            "type": ["string"]
+          },
+          "n_regionkey": {
+            "type": ["number"]
+          },
+          "n_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": ["n_nationkey", "n_name", "n_regionkey"]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-nation",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "n_nationkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "n_name"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "n_regionkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "n_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-orders",
+      "table_name": "orders",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "o_orderkey": {
+            "type": ["number"]
+          },
+          "o_custkey": {
+            "type": ["number"]
+          },
+          "o_orderstatus": {
+            "type": ["string"]
+          },
+          "o_totalprice": {
+            "type": ["number"]
+          },
+          "o_orderdate": {
+            "format": "date",
+            "type": ["string"]
+          },
+          "o_orderpriority": {
+            "type": ["string"]
+          },
+          "o_clerk": {
+            "type": ["string"]
+          },
+          "o_shippriority": {
+            "type": ["number"]
+          },
+          "o_comment": {
+            "type": ["string"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "o_orderkey",
+          "o_custkey",
+          "o_orderstatus",
+          "o_totalprice",
+          "o_orderdate",
+          "o_orderpriority",
+          "o_clerk",
+          "o_shippriority",
+          "o_comment"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-orders",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "o_orderkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_custkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_orderstatus"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_totalprice"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_orderdate"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_orderpriority"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_clerk"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_shippriority"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-part",
+      "table_name": "part",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "p_partkey": {
+            "type": ["number"]
+          },
+          "p_name": {
+            "type": ["string"]
+          },
+          "p_mfgr": {
+            "type": ["string"]
+          },
+          "p_brand": {
+            "type": ["string"]
+          },
+          "p_type": {
+            "type": ["string"]
+          },
+          "p_size": {
+            "type": ["number"]
+          },
+          "p_container": {
+            "type": ["string"]
+          },
+          "p_retailprice": {
+            "type": ["number"]
+          },
+          "p_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "p_partkey",
+          "p_name",
+          "p_mfgr",
+          "p_brand",
+          "p_type",
+          "p_size",
+          "p_container",
+          "p_retailprice"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-part",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "p_partkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_name"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_mfgr"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_brand"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_type"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_size"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_container"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_retailprice"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "p_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-partsupp",
+      "table_name": "partsupp",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "ps_partkey": {
+            "type": ["number"]
+          },
+          "ps_suppkey": {
+            "type": ["number"]
+          },
+          "ps_availqty": {
+            "type": ["number"]
+          },
+          "ps_supplycost": {
+            "type": ["number"]
+          },
+          "ps_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": ["ps_partkey", "ps_suppkey", "ps_availqty", "ps_supplycost"]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-partsupp",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "ps_partkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "ps_suppkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "ps_availqty"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "ps_supplycost"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "ps_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-region",
+      "table_name": "region",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "r_regionkey": {
+            "type": ["number"]
+          },
+          "r_name": {
+            "type": ["string"]
+          },
+          "r_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": ["r_regionkey", "r_name"]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-region",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "r_regionkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "r_name"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "r_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-supplier",
+      "table_name": "supplier",
+      "replication_method": "",
+      "key_properties": [],
+      "schema": {
+        "properties": {
+          "s_suppkey": {
+            "type": ["number"]
+          },
+          "s_name": {
+            "type": ["string"]
+          },
+          "s_address": {
+            "type": ["string"]
+          },
+          "s_nationkey": {
+            "type": ["number"]
+          },
+          "s_phone": {
+            "type": ["string"]
+          },
+          "s_acctbal": {
+            "type": ["number"]
+          },
+          "s_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "s_suppkey",
+          "s_name",
+          "s_address",
+          "s_nationkey",
+          "s_phone",
+          "s_acctbal"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-supplier",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "s_suppkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_name"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_address"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_nationkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_phone"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_acctbal"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": [],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1"
+          }
+        }
+      ]
+    }
+  ]
+}
