@@ -99,7 +99,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
@@ -350,7 +351,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
@@ -467,7 +469,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
@@ -582,7 +585,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
@@ -652,7 +656,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
@@ -704,7 +709,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
@@ -799,7 +805,8 @@
             "inclusion": "available",
             "table-key-properties": [],
             "forced-replication-method": "",
-            "schema-name": "tpch_sf1"
+            "schema-name": "tpch_sf1",
+            "selected": true
           }
         }
       ]
