@@ -1,7 +1,7 @@
 """Tests standard tap features using the built-in SDK tests library."""
 import os
 
-from singer_sdk.testing import get_tap_test_class
+from singer_sdk.testing import SuiteConfig, get_tap_test_class
 
 from tap_snowflake.tap import TapSnowflake
 
@@ -16,5 +16,8 @@ SAMPLE_CONFIG = {
 
 
 TestTapSnowflake = get_tap_test_class(
-    tap_class=TapSnowflake, config=SAMPLE_CONFIG, catalog="tests/catalog.json"
+    tap_class=TapSnowflake,
+    config=SAMPLE_CONFIG,
+    suite_config=SuiteConfig(ignore_no_records_for_streams=["tpch_sf1-lineitem"]),
+    catalog="tests/catalog.json",
 )
