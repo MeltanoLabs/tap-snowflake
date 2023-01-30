@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Iterable, List, Tuple
+from typing import Iterable, List, Tuple
 from uuid import uuid4
 
 import sqlalchemy
