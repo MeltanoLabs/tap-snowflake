@@ -21,6 +21,8 @@ from sqlalchemy.sql import text
 
 
 class ProfileStats(Enum):
+    """Profile Statistics Enum."""
+
     TABLE_SIZE_IN_MB = auto()
     TABLE_ROW_COUNT = auto()
     COLUMN_MIN_VALUE = auto()
@@ -31,6 +33,8 @@ class ProfileStats(Enum):
 
 @dataclass
 class ColumnProfile:
+    """Column Profile."""
+
     min_value: int | None
     max_value: int | None
     null_values: int | None
@@ -39,6 +43,8 @@ class ColumnProfile:
 
 @dataclass
 class TableProfile:
+    """Table Profile."""
+
     column_profiles: dict[str, ColumnProfile]
     row_count: int | None
     size_in_mb: int | None
@@ -187,6 +193,7 @@ class SnowflakeStream(SQLStream):
 
     @property
     def is_sorted(self):
+        """Is sorted."""
         return bool(self.replication_key)
 
     def _sync_batches(
@@ -214,10 +221,12 @@ class SnowflakeStream(SQLStream):
         # New: Collect the max value for the replication column.
         max_replication_key_value = None
         if self.replication_key:
-            table_profile: TableProfile = self.connector.get_table_profile(
-                full_table_name=self.fully_qualified_name,
-                stats={ProfileStats.COLUMN_MAX_VALUE},
-                profile_columns=[self.replication_key],
+            table_profile: TableProfile = (
+                self.connector.get_table_profile(  # type: ignore
+                    full_table_name=self.fully_qualified_name,
+                    stats={ProfileStats.COLUMN_MAX_VALUE},
+                    profile_columns=[self.replication_key],
+                )
             )
             max_replication_key_value = table_profile.column_profiles[
                 self.replication_key
@@ -234,7 +243,9 @@ class SnowflakeStream(SQLStream):
         # New: Increment and emit the final STATE message after sync has completed.
         if max_replication_key_value:
             self._increment_stream_state(
-                latest_record={self.replication_key: max_replication_key_value},
+                latest_record={
+                    self.replication_key: max_replication_key_value  # type: ignore
+                },
                 context=context,
             )
         self._write_state_message()
