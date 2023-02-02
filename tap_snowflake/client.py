@@ -122,8 +122,9 @@ class SnowflakeConnector(SQLConnector):
         Any stats not requested but available 'for free' while collecting other stats
         may be included in the returned profile. For example, the base implementation
         cannot calculate COLUMN_NULL_VALUES without also calculating TABLE_ROW_COUNT and
-        COLUMN_NONNULL_VALUES. The additional stats therefore would be returned along with the
-        requested stats. The consumer should ignore or disregard any stats not needed.
+        COLUMN_NONNULL_VALUES. The additional stats therefore would be returned along
+        with the requested stats. The consumer should ignore or disregard any stats not
+        needed.
 
         Note: Gathering stats can take a long time. The implementation should attempt
         to combine stats gathering into fewer tables scans where possible and only
