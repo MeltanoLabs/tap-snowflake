@@ -157,8 +157,12 @@ class SnowflakeConnector(SQLConnector):
                 expressions.append(f"count({col}) as nonnull__{col}")
             if ProfileStats.COLUMN_NULL_VALUES in stats:
                 expressions.append(f"count(1) - count({col}) as null__{col}")
-        result_dict = self.connection.scalars(
-            text(f"SELECT {', '.join(expressions)}) FROM {full_table_name})")
+        result_dict = (
+            self.connection.execute(
+                text(f"SELECT {', '.join(expressions)} FROM {full_table_name}")
+            )
+            .one()
+            ._asdict()
         )
         return TableProfile(
             row_count=result_dict.get("row_count", None),
@@ -180,6 +184,10 @@ class SnowflakeStream(SQLStream):
 
     connector_class = SnowflakeConnector
 
+    @property
+    def is_sorted(self):
+        return bool(self.replication_key)
+
     def _sync_batches(
         self,
         batch_config: BatchConfig,
@@ -200,7 +208,10 @@ class SnowflakeStream(SQLStream):
             batch_config: The batch configuration.
             context: Stream partition or context dictionary.
         """
+        self._write_starting_replication_value(context)
+
         # New: Collect the max value for the replication column.
+        max_replication_key_value = None
         if self.replication_key:
             table_profile: TableProfile = self.connector.get_table_profile(
                 full_table_name=self.fully_qualified_name,
@@ -244,19 +255,27 @@ class SnowflakeStream(SQLStream):
             raise NotImplementedError(
                 f"Stream '{self.name}' does not support partitioning."
             )
-        return self.get_batches_from_internal_user_stage(batch_config, context)
+        yield from self.get_batches_from_internal_user_stage(batch_config, context)
 
-    @staticmethod
     def _get_full_table_copy_statement(
-        sync_id: str, prefix: str, objects: List[str], table_name: str
+        self, sync_id: str, prefix: str, objects: List[str], table_name: str
     ) -> Tuple[text, dict]:
         """Get FULL_TABLE copy statement and key bindings."""
+        statement = [f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "]
+        if self.replication_key:
+            statement.append(
+                f"(select object_construct({', '.join(objects)}) from {table_name} "
+                f"order by {self.replication_key}) "
+            )
+        else:
+            statement.append(
+                f"(select object_construct({', '.join(objects)}) from {table_name}) "
+            )
+        statement.append(
+            "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
+        )
         return (
-            text(
-                f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "
-                + f"(select object_construct({', '.join(objects)}) from {table_name}) "
-                + "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
-            ),
+            text("".join(statement)),
             {},
         )
 
@@ -347,11 +366,11 @@ class SnowflakeStream(SQLStream):
             copy_statement, kwargs = self._get_copy_statement(
                 sync_id=sync_id, prefix=prefix, context=context
             )
-            self.connector.connection.execute(copy_statement, **kwargs)
+            self.connector.connection.execute(copy_statement, **kwargs).all()
             # list available files
             results = self.connector.connection.execute(
                 text(f"list '@~/tap-snowflake/{sync_id}/'")
-            )
+            ).all()
             # download available files
             local_path = f"{root.replace('file://', '')}/{sync_id}"
             Path(local_path).mkdir(parents=True, exist_ok=True)
@@ -368,3 +387,49 @@ class SnowflakeStream(SQLStream):
                 text(f"remove '@~/tap-snowflake/{sync_id}/'")
             )
         yield (batch_config.encoding, files)
+
+    # Get records from stream
+    # Overridden to use native objects under `if start_val:`
+    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
+        """Return a generator of record-type dictionary objects.
+
+        If the stream has a replication_key value defined, records will be sorted by the
+        incremental key. If the stream also has an available starting bookmark, the
+        records will be filtered for values greater than or equal to the bookmark value.
+
+        Args:
+            context: If partition context is provided, will read specifically from this
+                data slice.
+
+        Yields:
+            One dict per record.
+
+        Raises:
+            NotImplementedError: If partition is passed in context and the stream does
+                not support partitioning.
+        """
+        if context:
+            raise NotImplementedError(
+                f"Stream '{self.name}' does not support partitioning."
+            )
+
+        selected_column_names = self.get_selected_schema()["properties"].keys()
+        table = self.connector.get_table(
+            full_table_name=self.fully_qualified_name,
+            column_names=selected_column_names,
+        )
+        query = table.select()
+
+        if self.replication_key:
+            replication_key_col = table.columns[self.replication_key]
+            query = query.order_by(replication_key_col)
+
+            start_val = self.get_starting_replication_key_value(context)
+            if start_val:
+                query = query.where(replication_key_col >= start_val)
+
+        if self._MAX_RECORDS_LIMIT is not None:
+            query = query.limit(self._MAX_RECORDS_LIMIT)
+
+        for record in self.connector.connection.execute(query):
+            yield dict(record)
