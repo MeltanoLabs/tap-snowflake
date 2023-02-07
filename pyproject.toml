@@ -18,7 +18,7 @@ python = "<3.11,>=3.7.1"
 requests = "^2.25.1"
 # singer-sdk = {extras = ["testing"], version = "^0.19.0"}
 # use main until SDK 0.20.0
-singer-sdk = {git = "https://github.com/meltano/sdk.git", rev = "main", extras=["testing"]}
+singer-sdk = {git = "https://github.com/meltano/sdk.git", rev = "kgpayne/apply-max-records-limit-during-testing", extras=["testing"]}
 snowflake-sqlalchemy = "^1.4.3"
 snowflake-connector-python = "^2.8.0"
 

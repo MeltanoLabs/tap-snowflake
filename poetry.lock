@@ -1293,8 +1293,8 @@ testing = ["pytest (>=7.2.1,<8.0.0)", "pytest-durations (>=1.2.0,<2.0.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/meltano/sdk.git"
-reference = "kgpayne/fix-test-tap-discovery"
-resolved_reference = "44b4b020639506964db20d064ec22595c0aa92ca"
+reference = "kgpayne/apply-max-records-limit-during-testing"
+resolved_reference = "3047aa0d6b5ffa4db4ae907be8b673a39f11250d"
 
 [[package]]
 name = "six"
@@ -1658,4 +1658,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = "<3.11,>=3.7.1"
-content-hash = "cfb446dcc89f7bd25d7169b323e659a187834ad45e789622c5e71ed0a7f0c681"
+content-hash = "44668fc06418a692fb6066b686ad66e60cb43b2b256c9e7cb496ad1d9a2cf875"
