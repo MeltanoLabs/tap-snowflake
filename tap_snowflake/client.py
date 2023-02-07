@@ -70,7 +70,7 @@ class SnowflakeConnector(SQLConnector):
             for table_name, is_view in self.get_object_names(
                 engine, inspected, schema_name
             ):
-                if not tables or f"{schema_name}.{table_name}" in tables:
+                if (not tables) or (f"{schema_name}.{table_name}" in tables):
                     catalog_entry = self.discover_catalog_entry(
                         engine, inspected, schema_name, table_name, is_view
                     )
