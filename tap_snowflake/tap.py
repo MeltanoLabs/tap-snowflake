@@ -52,6 +52,11 @@ class TapSnowflake(SQLTap):
             th.StringType,
             description="The initial role for the session.",
         ),
+        th.Property(
+            "tables",
+            th.ArrayType(th.StringType),
+            description="An array of the table names that you want to sync. The table names should be fully qualified, including schema and table name. NOTE: this limits discovery to the tables specified, for performance reasons. Do not specify `tables` to discover entire available catalog.",  # noqa: E501
+        ),
     ).to_dict()
     default_stream_class = SnowflakeStream
 
