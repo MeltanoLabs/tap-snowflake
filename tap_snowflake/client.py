@@ -22,6 +22,7 @@ from sqlalchemy.sql import text
 
 logger = logging.getLogger()
 
+
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
@@ -47,7 +48,7 @@ class SnowflakeConnector(SQLConnector):
 
         return URL(**params)
 
-    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
+    def create_engine(self) -> sqlalchemy.engine.Engine:
         """Return a new SQLAlchemy engine using the provided config.
 
         Developers can generally override just one of the following:
