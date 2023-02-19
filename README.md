@@ -10,7 +10,7 @@ Adapted from Meltano's tap to support key pair authentication to Snowflake.
   - namespace: tap-snowflake
   - pip_url: git+https://github.com/JamieSplitit/tap-snowflake.git
   - executable name: tap-snowflake
-  - settings: `account,database,schema,user,password:password,warehouse,role,private_key,private_key_passphrase,stream_maps:object,stream_map_config:object,flattening_enabled:boolean,flattening_max_depth:integer`
+  - settings: `account,database,schema,user,password:password,warehouse,role,private_key:password,private_key_passphrase:password,stream_maps:object,stream_map_config:object,flattening_enabled:boolean,flattening_max_depth:integer`
 
 
 ## Installation
