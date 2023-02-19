@@ -5,11 +5,14 @@ This includes SnowflakeStream and SnowflakeConnector.
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Iterable, List, Tuple
 from uuid import uuid4
 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
@@ -17,6 +20,7 @@ from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMEN
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
+logger = logging.getLogger()
 
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
@@ -24,13 +28,20 @@ class SnowflakeConnector(SQLConnector):
     @classmethod
     def get_sqlalchemy_url(cls, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
+        if config.get("password"):
+            logger.info("Connecting to Snowflake using basic authentication")
+        else:
+            if config.get("private_key") is None:
+                raise ValueError("tap-snowflake must be passed one of 'password' or 'private_key' to use for authentication")
+            else:
+                logger.info("Connecting to Snowflake using key pair authentication")
+
         params = {
             "account": config["account"],
             "user": config["user"],
-            "password": config["password"],
         }
 
-        for option in ["database", "schema", "warehouse", "role"]:
+        for option in ["database", "schema", "warehouse", "role", "password"]:
             if config.get(option):
                 params[option] = config.get(option)
 
@@ -45,8 +56,22 @@ class SnowflakeConnector(SQLConnector):
         Returns:
             A newly created SQLAlchemy engine object.
         """
+        connect_args = None
+        if self.config.get("private_key"):
+            key = self.config["private_key"]
+            key_code = self.config["private_key_passphrase"]
+            p_key = serialization.load_pem_private_key(
+                bytes(key, "utf-8"), password=key_code.encode(), backend=default_backend()
+            )
+            pkb = p_key.private_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+            connect_args = {'private_key': pkb}
+
         return sqlalchemy.create_engine(
-            self.sqlalchemy_url, echo=False, pool_timeout=10
+            self.sqlalchemy_url, echo=False, pool_timeout=10, connect_args=connect_args
         )
 
     # overridden to filter out the information_schema from catalog discovery

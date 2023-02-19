@@ -8,11 +8,6 @@ from tap_snowflake.client import SnowflakeStream
 
 class TapSnowflake(SQLTap):
     """Snowflake tap class."""
-
-    name = "tap-snowflake"
-    package_name = "meltanolabs-tap-snowflake"
-
-    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
     config_jsonschema = th.PropertiesList(
         th.Property(
             "user",
@@ -23,8 +18,17 @@ class TapSnowflake(SQLTap):
         th.Property(
             "password",
             th.StringType,
-            required=True,
-            description="The password for your Snowflake user.",
+            description="The password for your Snowflake user. Either this or the private key is required.",
+        ),
+        th.Property(
+            "private_key",
+            th.StringType,
+            description="The private key to authenticate your Snowflake user. Either this or the password is required.",
+        ),
+        th.Property(
+            "private_key_passphrase",
+            th.StringType,
+            description="The passphrase for your encrypted private key to authenticate your Snowflake user.",
         ),
         th.Property(
             "account",
@@ -53,6 +57,11 @@ class TapSnowflake(SQLTap):
             description="The initial role for the session.",
         ),
     ).to_dict()
+
+    name = "tap-snowflake"
+    package_name = "meltanolabs-tap-snowflake"
+
+    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
     default_stream_class = SnowflakeStream
 
 
