@@ -19,6 +19,8 @@ requests = "^2.25.1"
 # singer-sdk = {extras = ["testing"], version = ">=0.22.1"}
 # TODO: remove before merge
 singer-sdk = {git = "https://github.com/meltano/sdk.git", rev = "feat-handle-sync-abort", extras=["testing"]}
+snowflake-sqlalchemy = "^1.4.7"
+snowflake-connector-python = "^3.0.2"
 
 [tool.poetry.dev-dependencies]
 tox = "^3.24.4"
