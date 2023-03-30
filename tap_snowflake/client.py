@@ -442,8 +442,10 @@ class SnowflakeStream(SQLStream):
             if start_val:
                 query = query.where(replication_key_col >= start_val)
 
-        if self._MAX_RECORDS_LIMIT is not None:
-            query = query.limit(self._MAX_RECORDS_LIMIT)
+        if self.ABORT_AT_RECORD_COUNT is not None:
+            query = query.limit(
+                self.ABORT_AT_RECORD_COUNT + 1
+            )  # +1 required to trip abort
 
         for record in self.connector.connection.execute(query):
             yield dict(record)
