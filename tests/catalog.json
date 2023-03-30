@@ -4,7 +4,7 @@
       "tap_stream_id": "tpch_sf1-customer",
       "table_name": "customer",
       "replication_method": "",
-      "key_properties": [],
+      "key_properties": ["c_custkey"],
       "schema": {
         "properties": {
           "c_custkey": {
@@ -97,7 +97,8 @@
           "breadcrumb": [],
           "metadata": {
             "inclusion": "available",
-            "table-key-properties": [],
+            "table-key-properties": ["c_custkey"],
+            "valid-replication-keys": ["c_custkey"],
             "forced-replication-method": "",
             "schema-name": "tpch_sf1",
             "selected": true
@@ -299,7 +300,7 @@
       "tap_stream_id": "tpch_sf1-nation",
       "table_name": "nation",
       "replication_method": "",
-      "key_properties": [],
+      "key_properties": ["n_nationkey"],
       "schema": {
         "properties": {
           "n_nationkey": {
@@ -361,7 +362,7 @@
       "tap_stream_id": "tpch_sf1-orders",
       "table_name": "orders",
       "replication_method": "",
-      "key_properties": [],
+      "key_properties": ["o_orderkey"],
       "schema": {
         "properties": {
           "o_orderkey": {
@@ -467,7 +468,8 @@
           "breadcrumb": [],
           "metadata": {
             "inclusion": "available",
-            "table-key-properties": [],
+            "table-key-properties": ["o_orderkey"],
+            "valid-replication-keys": ["o_orderkey"],
             "forced-replication-method": "",
             "schema-name": "tpch_sf1",
             "selected": true
