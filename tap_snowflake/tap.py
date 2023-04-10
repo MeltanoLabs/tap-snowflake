@@ -61,7 +61,7 @@ class TapSnowflake(SQLTap):
                 "NOTE: this limits discovery to the tables specified, for performance "
                 "reasons. Do not specify `tables` if you intend to discover the entire "
                 "available catalog."
-            ), 
+            ),
         ),
     ).to_dict()
     default_stream_class = SnowflakeStream
