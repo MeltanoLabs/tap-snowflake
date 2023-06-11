@@ -69,7 +69,7 @@ class SnowflakeConnector(SQLConnector):
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
             )
-            connect_args = {'private_key': pkb}
+            connect_args = {'private_key': pkb, 'client_session_keep_alive': True}
 
         return sqlalchemy.create_engine(
             self.sqlalchemy_url, echo=False, pool_timeout=10, connect_args=connect_args
