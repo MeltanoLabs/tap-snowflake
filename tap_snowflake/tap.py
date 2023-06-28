@@ -10,7 +10,6 @@ class TapSnowflake(SQLTap):
     """Snowflake tap class."""
 
     name = "tap-snowflake"
-    package_name = "meltanolabs-tap-snowflake"
 
     # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
     config_jsonschema = th.PropertiesList(
