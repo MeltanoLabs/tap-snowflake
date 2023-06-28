@@ -21,13 +21,14 @@ snowflake-sqlalchemy = "^1.4.7"
 snowflake-connector-python = "^3.0.2"
 
 [tool.poetry.dev-dependencies]
-tox = "^3.24.4"
-flake8 = "^3.9.2"
 black = "^22.3.0"
-pydocstyle = "^6.1.1"
-mypy = "^0.991"
-types-requests = "^2.26.1"
+flake8 = "^3.9.2"
 isort = "^5.10.1"
+mypy = "^0.991"
+pydocstyle = "^6.1.1"
+singer-sdk = {extras = ["testing"], version = ">=0.23.0"}
+tox = "^3.24.4"
+types-requests = "^2.26.1"
 
 [tool.isort]
 profile = "black"
