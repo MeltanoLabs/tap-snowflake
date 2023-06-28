@@ -12,12 +12,24 @@ SAMPLE_CONFIG = {
     "database": os.getenv("SF_DATABASE"),
     "warehouse": os.getenv("SF_WAREHOUSE"),
     "role": os.getenv("SF_ROLE"),
+    "tables": [
+        "tpch_sf1.customer",
+        "tpch_sf1.lineitem",
+        "tpch_sf1.nation",
+        "tpch_sf1.orders",
+        "tpch_sf1.part",
+        "tpch_sf1.partsupp",
+        "tpch_sf1.region",
+        "tpch_sf1.supplier",
+    ],
 }
 
 
 TestTapSnowflake = get_tap_test_class(
     tap_class=TapSnowflake,
     config=SAMPLE_CONFIG,
-    suite_config=SuiteConfig(ignore_no_records_for_streams=["tpch_sf1-lineitem"]),
+    suite_config=SuiteConfig(
+        max_records_limit=100, ignore_no_records_for_streams=["tpch_sf1-lineitem"]
+    ),
     catalog="tests/catalog.json",
 )
