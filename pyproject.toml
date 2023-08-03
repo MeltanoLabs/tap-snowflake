@@ -3,7 +3,7 @@ name = "meltanolabs-tap-snowflake"
 version = "0.0.0"
 description = "`tap-snowflake` is a Singer tap for Snowflake, built with the Meltano SDK for Singer Taps."
 readme = "README.md"
-authors = ["Ken Payne"]
+authors = ["Meltano Team <hello@meltano.com>"]
 keywords = [
     "ELT",
     "Snowflake",
@@ -19,6 +19,7 @@ requests = "^2.25.1"
 singer-sdk = ">=0.23.0"
 snowflake-sqlalchemy = "^1.4.7"
 snowflake-connector-python = "^3.0.2"
+sqlalchemy = "<2"
 
 [tool.poetry.dev-dependencies]
 black = "^22.3.0"
@@ -26,7 +27,7 @@ flake8 = "^3.9.2"
 isort = "^5.10.1"
 mypy = "^0.991"
 pydocstyle = "^6.1.1"
-singer-sdk = {extras = ["testing"], version = ">=0.23.0"}
+singer-sdk = {extras = ["testing"], version = "*"}
 tox = "^3.24.4"
 types-requests = "^2.26.1"
 
