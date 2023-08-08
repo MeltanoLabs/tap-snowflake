@@ -17,6 +17,7 @@ from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
+from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
 
 
@@ -68,17 +69,15 @@ class SnowflakeConnector(SQLConnector):
 
         return URL(**params)
 
-    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
-        """Return a new SQLAlchemy engine using the provided config.
-
-        Developers can generally override just one of the following:
-        `sqlalchemy_engine`, sqlalchemy_url`.
-
-        Returns:
-            A newly created SQLAlchemy engine object.
-        """
+    def create_engine(self) -> Engine:
         return sqlalchemy.create_engine(
-            self.sqlalchemy_url, echo=False, pool_timeout=10
+            self.sqlalchemy_url,
+            echo=False,
+            pool_timeout=10,
+            # TODO: Enable these when `snowflake-sqlalchemy` supports it.
+            # https://github.com/snowflakedb/snowflake-sqlalchemy/issues/433
+            # json_serializer=self.serialize_json,
+            # json_deserializer=self.deserialize_json,
         )
 
     # overridden to filter out the information_schema from catalog discovery
