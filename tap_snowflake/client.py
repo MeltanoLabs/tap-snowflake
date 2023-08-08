@@ -69,6 +69,11 @@ class SnowflakeConnector(SQLConnector):
         return URL(**params)
 
     def create_engine(self) -> sqlalchemy.engine.Engine:
+        """Create SQLAlchemy engine instance.
+
+        Returns:
+            A SQLAlchemy engine.
+        """
         return sqlalchemy.create_engine(
             self.sqlalchemy_url,
             echo=False,
