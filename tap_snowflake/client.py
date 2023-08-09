@@ -17,7 +17,6 @@ from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
-from sqlalchemy.engine import Engine
 from sqlalchemy.sql import text
 
 
@@ -69,7 +68,12 @@ class SnowflakeConnector(SQLConnector):
 
         return URL(**params)
 
-    def create_engine(self) -> Engine:
+    def create_engine(self) -> sqlalchemy.engine.Engine:
+        """Create SQLAlchemy engine instance.
+
+        Returns:
+            A SQLAlchemy engine.
+        """
         return sqlalchemy.create_engine(
             self.sqlalchemy_url,
             echo=False,
