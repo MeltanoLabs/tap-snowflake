@@ -68,17 +68,16 @@ class SnowflakeConnector(SQLConnector):
 
         return URL(**params)
 
-    def create_sqlalchemy_engine(self) -> sqlalchemy.engine.Engine:
-        """Return a new SQLAlchemy engine using the provided config.
-
-        Developers can generally override just one of the following:
-        `sqlalchemy_engine`, sqlalchemy_url`.
+    def create_engine(self) -> sqlalchemy.engine.Engine:
+        """Create SQLAlchemy engine instance.
 
         Returns:
-            A newly created SQLAlchemy engine object.
+            A SQLAlchemy engine.
         """
         return sqlalchemy.create_engine(
-            self.sqlalchemy_url, echo=False, pool_timeout=10
+            self.sqlalchemy_url,
+            echo=False,
+            pool_timeout=10,
         )
 
     # overridden to filter out the information_schema from catalog discovery
