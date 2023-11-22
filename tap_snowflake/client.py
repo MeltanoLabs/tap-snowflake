@@ -114,24 +114,25 @@ class SnowflakeConnector(SQLConnector):
         tables = [t.lower() for t in self.config.get("tables", [])]
         LOGGER.debug("This is the tables: %s", tables)
         LOGGER.debug("This is the config: %s", self.config)
-        engine = self.create_sqlalchemy_engine()
-        inspected = sqlalchemy.inspect(engine)
-        schema_names = [
-            schema_name
-            for schema_name in self.get_schema_names(engine, inspected)
-            if schema_name.lower() != "information_schema"
-        ]
-        LOGGER.debug("This is the schema_names: %s", schema_names)
-        for schema_name in schema_names:
-            # Iterate through each table and view
-            for table_name, is_view in self.get_object_names(
-                engine, inspected, schema_name
-            ):
-                if (not tables) or (f"{schema_name}.{table_name}" in tables):
-                    catalog_entry = self.discover_catalog_entry(
-                        engine, inspected, schema_name, table_name, is_view
-                    )
-                    result.append(catalog_entry.to_dict())
+        result.append(self.config)
+        # engine = self.create_sqlalchemy_engine()
+        # inspected = sqlalchemy.inspect(engine)
+        # schema_names = [
+        #     schema_name
+        #     for schema_name in self.get_schema_names(engine, inspected)
+        #     if schema_name.lower() != "information_schema"
+        # ]
+        # LOGGER.debug("This is the schema_names: %s", schema_names)
+        # for schema_name in schema_names:
+        #     # Iterate through each table and view
+        #     for table_name, is_view in self.get_object_names(
+        #         engine, inspected, schema_name
+        #     ):
+        #         if (not tables) or (f"{schema_name}.{table_name}" in tables):
+        #             catalog_entry = self.discover_catalog_entry(
+        #                 engine, inspected, schema_name, table_name, is_view
+        #             )
+        #             result.append(catalog_entry.to_dict())
 
         return result
 
