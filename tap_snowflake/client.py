@@ -20,6 +20,7 @@ from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMEN
 import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
+LOGGER = singer.get_logger()
 
 unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
 
