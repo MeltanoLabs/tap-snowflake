@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 import datetime
-import singer
 
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
@@ -21,7 +20,6 @@ from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMEN
 import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
-LOGGER = singer.get_logger()
 
 unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
 
@@ -112,8 +110,6 @@ class SnowflakeConnector(SQLConnector):
         """
         result: list[dict] = []
         tables = [t.lower() for t in self.config.get("tables", [])]
-        LOGGER.debug("This is the tables: %s", tables)
-        LOGGER.debug("This is the config: %s", self.config)
         result.append(self.config)
         # engine = self.create_sqlalchemy_engine()
         # inspected = sqlalchemy.inspect(engine)
