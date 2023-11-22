@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 import datetime
+import singer
 
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
