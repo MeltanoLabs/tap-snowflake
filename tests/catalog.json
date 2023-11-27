@@ -378,7 +378,7 @@
             "type": ["number"]
           },
           "o_orderdate": {
-            "format": "date-time",
+            "format": "date",
             "type": ["string"]
           },
           "o_orderpriority": {
