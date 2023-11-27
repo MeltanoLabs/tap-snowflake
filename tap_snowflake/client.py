@@ -13,7 +13,6 @@ from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 import datetime
 
-from loguru import logger
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
@@ -119,8 +118,15 @@ class SnowflakeConnector(SQLConnector):
             for schema_name in self.get_schema_names(engine, inspected)
             if schema_name.lower() != "information_schema"
         ]
-        logger.info("This is the schema_names: %s", schema_names)
-        logger.info("This is the tables: %s", tables)
+        #print("This is self.config: %s", self.config)
+        #print(self.config)
+        print("This is the schema_names: %s", schema_names)
+        print("This is the tables: %s", tables)
+        self.logger.info("This is tables")
+        self.logger.info(tables)
+        self.logger.info("This is schema_names")
+        self.logger.info(schema_names)
+        self.logger.info(self.config)
         for schema_name in schema_names:
             # Iterate through each table and view
             for table_name, is_view in self.get_object_names(
