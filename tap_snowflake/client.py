@@ -99,6 +99,10 @@ class SnowflakeConnector(SQLConnector):
             self.sqlalchemy_url,
             echo=False,
             pool_timeout=10,
+            # TODO: Enable these when `snowflake-sqlalchemy` supports it.
+            # https://github.com/snowflakedb/snowflake-sqlalchemy/issues/433
+            # json_serializer=self.serialize_json,
+            # json_deserializer=self.deserialize_json,
         )
 
     # overridden to filter out the information_schema from catalog discovery
