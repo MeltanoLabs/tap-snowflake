@@ -1,0 +1,222 @@
+{
+  "streams": [
+    {
+      "tap_stream_id": "tpch_sf1-supplier",
+      "table_name": "supplier",
+      "replication_method": "INCREMENTAL",
+      "replication_key": "s_suppkey",
+      "key_properties": ["s_suppkey"],
+      "schema": {
+        "properties": {
+          "s_suppkey": {
+            "type": ["number"]
+          },
+          "s_name": {
+            "type": ["string"]
+          },
+          "s_address": {
+            "type": ["string"]
+          },
+          "s_nationkey": {
+            "type": ["number"]
+          },
+          "s_phone": {
+            "type": ["string"]
+          },
+          "s_acctbal": {
+            "type": ["number"]
+          },
+          "s_comment": {
+            "type": ["string", "null"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "s_suppkey",
+          "s_name",
+          "s_address",
+          "s_nationkey",
+          "s_phone",
+          "s_acctbal"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-supplier",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "s_suppkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_name"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_address"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_nationkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_phone"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_acctbal"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "s_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": ["s_suppkey"],
+            "valid-replication-keys": ["s_suppkey"],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1",
+            "selected": true
+          }
+        }
+      ]
+    },
+    {
+      "tap_stream_id": "tpch_sf1-orders",
+      "table_name": "orders",
+      "replication_method": "INCREMENTAL",
+      "replication_key": "o_orderkey",
+      "key_properties": ["o_orderkey"],
+      "schema": {
+        "properties": {
+          "o_orderkey": {
+            "type": ["number"]
+          },
+          "o_custkey": {
+            "type": ["number"]
+          },
+          "o_orderstatus": {
+            "type": ["string"]
+          },
+          "o_totalprice": {
+            "type": ["number"]
+          },
+          "o_orderdate": {
+            "format": "date",
+            "type": ["string"]
+          },
+          "o_orderpriority": {
+            "type": ["string"]
+          },
+          "o_clerk": {
+            "type": ["string"]
+          },
+          "o_shippriority": {
+            "type": ["number"]
+          },
+          "o_comment": {
+            "type": ["string"]
+          }
+        },
+        "type": "object",
+        "required": [
+          "o_orderkey",
+          "o_custkey",
+          "o_orderstatus",
+          "o_totalprice",
+          "o_orderdate",
+          "o_orderpriority",
+          "o_clerk",
+          "o_shippriority",
+          "o_comment"
+        ]
+      },
+      "is_view": false,
+      "stream": "tpch_sf1-orders",
+      "metadata": [
+        {
+          "breadcrumb": ["properties", "o_orderkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_custkey"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_orderstatus"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_totalprice"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_orderdate"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_orderpriority"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_clerk"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_shippriority"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": ["properties", "o_comment"],
+          "metadata": {
+            "inclusion": "available"
+          }
+        },
+        {
+          "breadcrumb": [],
+          "metadata": {
+            "inclusion": "available",
+            "table-key-properties": ["o_orderkey"],
+            "valid-replication-keys": ["o_orderkey", "o_orderdate"],
+            "forced-replication-method": "",
+            "schema-name": "tpch_sf1",
+            "selected": true
+          }
+        }
+      ]
+    }
+  ]
+}
