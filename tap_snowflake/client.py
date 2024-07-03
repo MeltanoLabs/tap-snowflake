@@ -11,13 +11,34 @@ from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
+import datetime
 
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
+import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
+
+unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
+
+
+def patched_conform(
+    elem: Any,
+    property_schema: dict,
+) -> Any:
+    """Overrides Singer SDK type conformance to prevent dates turning into datetimes.
+    Converts a primitive (i.e. not object or array) to a json compatible type.
+    Returns:
+        The appropriate json compatible type.
+    """
+    if isinstance(elem, datetime.date):
+        return elem.isoformat()
+    return unpatched_conform(elem=elem, property_schema=property_schema)
+
+
+singer_sdk.helpers._typing._conform_primitive_property = patched_conform
 
 
 class ProfileStats(Enum):
