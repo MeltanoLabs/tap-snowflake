@@ -29,7 +29,9 @@ environment variable is set either in the terminal context or in the `.env` file
 
 ### Source Authentication and Authorization
 
-Standard `username` and `password` auth is supported.
+This tap supports two authentication methods:
+- Standard `username` and `password` auth
+- [Key Pair Authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth)
 
 ### Enabling Batch Messaging
 

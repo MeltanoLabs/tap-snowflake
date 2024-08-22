@@ -14,6 +14,11 @@ plugins:
     - name: user
     - name: password
       kind: password
+    - name: private_key
+      kind: password
+    - name: private_key_path
+    - name: private_key_passphrase
+      kind: password
     - name: account
       kind: password
     - name: role
