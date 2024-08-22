@@ -12,11 +12,13 @@ from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 import datetime
-
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
+from singer_sdk.exceptions import ConfigValidationError
 import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
@@ -74,14 +76,68 @@ class TableProfile:
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
-    @classmethod
-    def get_sqlalchemy_url(cls, config: dict) -> str:
+    def get_private_key(self):
+        """Get private key from the right location."""
+
+        try:
+            encoded_passphrase = self.config["private_key_passphrase"].encode()
+        except KeyError:
+            encoded_passphrase = None
+
+        if "private_key_path" in self.config:
+            with open(self.config["private_key_path"], "rb") as key:
+                key_content = key.read()
+        else:
+            key_content = self.config["private_key"].encode()
+
+        p_key = serialization.load_pem_private_key(
+            key_content, password=encoded_passphrase, backend=default_backend()
+        )
+
+        return p_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
+    @property
+    def auth_method(self):
+        """
+        Validate & return the authentication method based on config.
+
+        Cache computed auth_method to attribute `_auth_method`.
+        """
+        try:
+            return self._auth_method
+        except AttributeError:
+            valid_auth_methods = [
+                "password",
+                "private_key",
+                "private_key_path",
+                "use_browser_authentication",
+            ]
+            auth_methods = [x for x in self.config if x in valid_auth_methods]
+            if len(auth_methods) != 1:
+                msg = (
+                    "Only one of `password`, `private_key`, `private_key_path`"
+                    f" should be provided. User provided: `{', '.join(auth_methods)}`"
+                )
+                raise ConfigValidationError(msg)
+            self._auth_method = auth_methods[0]
+            return self._auth_method
+
+    def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
+
         params = {
             "account": config["account"],
             "user": config["user"],
-            "password": config["password"],
         }
+
+        if self.auth_method == "password":
+            params["password"] = config["password"]
+        elif self.auth_method == "externalbrowser":
+            params["authenticator"] = "externalbrowser"
 
         for option in ["database", "schema", "warehouse", "role"]:
             if config.get(option):
@@ -95,10 +151,14 @@ class SnowflakeConnector(SQLConnector):
         Returns:
             A SQLAlchemy engine.
         """
+        connect_args = {}
+        if self.auth_method in ["private_key", "private_key_path"]:
+            connect_args["private_key"] = self.get_private_key()
         return sqlalchemy.create_engine(
             self.sqlalchemy_url,
             echo=False,
             pool_timeout=10,
+            connect_args=connect_args,
         )
 
     # overridden to filter out the information_schema from catalog discovery

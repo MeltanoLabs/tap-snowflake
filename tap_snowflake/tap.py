@@ -23,8 +23,32 @@ class TapSnowflake(SQLTap):
         th.Property(
             "password",
             th.StringType,
-            required=True,
-            description="The password for your Snowflake user.",
+            required=False,
+            description="The password for your Snowflake user. Either one of [`password`, `private_key`, `private_key_path`] is required or `use_browser_authentication` must be True.",
+        ),
+        th.Property(
+            "private_key",
+            th.StringType,
+            required=False,
+            description="The private key is used to connect to snowflake. Either one of [`password`, `private_key`, `private_key_path`] is required or `use_browser_authentication` must be True.",
+        ),
+        th.Property(
+            "private_key_path",
+            th.StringType,
+            required=False,
+            description="Path to where the private key is stored. The private key is used to connect to snowflake. Either one of [`password`, `private_key`, `private_key_path`] is required or `use_browser_authentication` must be True.",
+        ),
+        th.Property(
+            "private_key_passphrase",
+            th.StringType,
+            required=False,
+            description="The passprhase used to protect the private key",
+        ),
+        th.Property(
+            "use_browser_authentication",
+            th.BooleanType,
+            default=False,
+            description="Whether to use SSO authentication using an external browser.",
         ),
         th.Property(
             "account",
