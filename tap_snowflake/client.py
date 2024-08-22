@@ -110,20 +110,12 @@ class SnowflakeConnector(SQLConnector):
         try:
             return self._auth_method
         except AttributeError:
-            valid_auth_methods = [
-                "password",
-                "private_key",
-                "private_key_path",
-                "use_browser_authentication",
-            ]
-            auth_methods = [x for x in self.config if x in valid_auth_methods]
-            if len(auth_methods) != 1:
-                msg = (
-                    "Only one of `password`, `private_key`, `private_key_path`"
-                    f" should be provided. User provided: `{', '.join(auth_methods)}`"
-                )
-                raise ConfigValidationError(msg)
-            self._auth_method = auth_methods[0]
+            valid_auth_methods = {"private_key", "private_key_path", "password"}
+            config_auth_methods = [x for x in self.config if x in valid_auth_methods]
+            if len(config_auth_methods) != 1:    
+                raise ConfigValidationError("One of `password`, `private_key` or `private_key_path` must be specified")
+            else:
+                self._auth_method = config_auth_methods[0]
             return self._auth_method
 
     def get_sqlalchemy_url(self, config: dict) -> str:
@@ -136,8 +128,6 @@ class SnowflakeConnector(SQLConnector):
 
         if self.auth_method == "password":
             params["password"] = config["password"]
-        elif self.auth_method == "externalbrowser":
-            params["authenticator"] = "externalbrowser"
 
         for option in ["database", "schema", "warehouse", "role"]:
             if config.get(option):
@@ -173,16 +163,19 @@ class SnowflakeConnector(SQLConnector):
         engine = self.create_sqlalchemy_engine()
         inspected = sqlalchemy.inspect(engine)
         schema_names = [
-            schema_name
+            self._dialect.identifier_preparer.quote(schema_name)
             for schema_name in self.get_schema_names(engine, inspected)
             if schema_name.lower() != "information_schema"
         ]
-        for schema_name in schema_names:
-            # Iterate through each table and view
+        not_tables = not tables
+        table_schemas = {} if not_tables else set([x.split(".")[0] for x in tables])
+        table_schema_names = schema_names if not_tables else [x for x in schema_names if x in table_schemas]
+        for schema_name in table_schema_names:
+            # Iterate through each table and view of relevant schemas
             for table_name, is_view in self.get_object_names(
                 engine, inspected, schema_name
             ):
-                if (not tables) or (f"{schema_name}.{table_name}" in tables):
+                if not_tables or (f"{schema_name}.{table_name}" in tables):
                     catalog_entry = self.discover_catalog_entry(
                         engine, inspected, schema_name, table_name, is_view
                     )
