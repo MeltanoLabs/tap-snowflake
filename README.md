@@ -33,6 +33,10 @@ This tap supports two authentication methods:
 - Standard `username` and `password` auth
 - [Key Pair Authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth)
 
+### Key Pair Authentication
+
+Key Pair authentication can be enabled by specifing either the `private_key` of the `private_key_path`, and optionally the `private_key_passphrase` if required.
+
 ### Enabling Batch Messaging
 
 This tap is built using the Meltano SDK and therefore supports a `BATCH` [message type](https://sdk.meltano.com/en/latest/batch.html), in
