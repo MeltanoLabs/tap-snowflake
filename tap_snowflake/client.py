@@ -169,7 +169,7 @@ class SnowflakeConnector(SQLConnector):
         ]
         not_tables = not tables
         table_schemas = {} if not_tables else set([x.split(".")[0] for x in tables])
-        table_schema_names = schema_names if not_tables else [x for x in schema_names if x in table_schemas]
+        table_schema_names = [x for x in schema_names if x in table_schemas] or schema_names
         for schema_name in table_schema_names:
             # Iterate through each table and view of relevant schemas
             for table_name, is_view in self.get_object_names(
