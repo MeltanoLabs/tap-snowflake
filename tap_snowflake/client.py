@@ -113,7 +113,7 @@ class SnowflakeConnector(SQLConnector):
             valid_auth_methods = {"private_key", "private_key_path", "password"}
             config_auth_methods = [x for x in self.config if x in valid_auth_methods]
             if len(config_auth_methods) != 1:
-                msg = f"One of {valid_auth_method} must be specified"
+                msg = f"One of {valid_auth_methods} must be specified"
                 raise ConfigValidationError(msg)
             self._auth_method = config_auth_methods[0]
         return self._auth_method
