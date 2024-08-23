@@ -33,7 +33,7 @@ This tap supports two authentication methods:
 - Standard `username` and `password` auth
 - [Key Pair Authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth)
 
-### Key Pair Authentication
+#### Key Pair Authentication
 
 Key Pair authentication can be enabled by specifing either the `private_key` of the `private_key_path`, and optionally the `private_key_passphrase` if required.
 

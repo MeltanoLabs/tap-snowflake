@@ -16,9 +16,11 @@ plugins:
       kind: password
     - name: private_key
       kind: password
+      sensitive: true
     - name: private_key_path
     - name: private_key_passphrase
       kind: password
+      sensitive: true
     - name: account
       kind: password
     - name: role
