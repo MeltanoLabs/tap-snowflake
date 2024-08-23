@@ -76,6 +76,8 @@ class TableProfile:
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
+    _auth_method : str | None = None
+
     def get_private_key(self):
         """Get private key from the right location."""
 
@@ -107,16 +109,14 @@ class SnowflakeConnector(SQLConnector):
 
         Cache computed auth_method to attribute `_auth_method`.
         """
-        try:
-            return self._auth_method
-        except AttributeError:
+        if not self._auth_method:
             valid_auth_methods = {"private_key", "private_key_path", "password"}
             config_auth_methods = [x for x in self.config if x in valid_auth_methods]
-            if len(config_auth_methods) != 1:    
-                raise ConfigValidationError("One of `password`, `private_key` or `private_key_path` must be specified")
-            else:
-                self._auth_method = config_auth_methods[0]
-            return self._auth_method
+            if len(config_auth_methods) != 1:
+                msg = f"One of {valid_auth_method} must be specified"
+                raise ConfigValidationError(msg)
+            self._auth_method = config_auth_methods[0]
+        return self._auth_method
 
     def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
