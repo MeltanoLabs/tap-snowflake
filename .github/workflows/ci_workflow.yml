@@ -3,7 +3,24 @@
 
 name: Test tap-snowflake
 
-on: [push]
+on:
+  push:
+    branches: [main]
+    paths:
+    - tap_snowflake/**
+    - tests/**
+    - .github/workflows/ci_workflow.yml
+    - poetry.lock
+    - pyproject.toml
+  pull_request:
+    branches: [main]
+    paths:
+    - tap_snowflake/**
+    - tests/**
+    - .github/workflows/ci_workflow.yml
+    - poetry.lock
+    - pyproject.toml
+  workflow_dispatch:
 
 jobs:
   linting:
