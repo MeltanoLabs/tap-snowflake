@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
@@ -76,8 +77,6 @@ class TableProfile:
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
-    _auth_method : str | None = None
-
     def get_private_key(self):
         """Get private key from the right location."""
 
@@ -102,21 +101,20 @@ class SnowflakeConnector(SQLConnector):
             encryption_algorithm=serialization.NoEncryption(),
         )
 
-    @property
+    @cached_property
     def auth_method(self):
         """
         Validate & return the authentication method based on config.
 
         Cache computed auth_method to attribute `_auth_method`.
         """
-        if not self._auth_method:
-            valid_auth_methods = {"private_key", "private_key_path", "password"}
-            config_auth_methods = [x for x in self.config if x in valid_auth_methods]
-            if len(config_auth_methods) != 1:
-                msg = f"One of {valid_auth_methods} must be specified"
-                raise ConfigValidationError(msg)
-            self._auth_method = config_auth_methods[0]
-        return self._auth_method
+
+        valid_auth_methods = {"private_key", "private_key_path", "password"}
+        config_auth_methods = [x for x in self.config if x in valid_auth_methods]
+        if len(config_auth_methods) != 1:
+            msg = f"One of {valid_auth_methods} must be specified"
+            raise ConfigValidationError(msg)
+        return config_auth_methods[0]
 
     def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
