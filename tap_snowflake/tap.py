@@ -23,8 +23,29 @@ class TapSnowflake(SQLTap):
         th.Property(
             "password",
             th.StringType,
-            required=True,
-            description="The password for your Snowflake user.",
+            required=False,
+            secret=True,
+            description="The password for your Snowflake user. Either one of [`password`, `private_key`, `private_key_path`] is required.",
+        ),
+        th.Property(
+            "private_key",
+            th.StringType,
+            required=False,
+            secret=True,
+            description="The private key is used to connect to snowflake. Either one of [`password`, `private_key`, `private_key_path`] is required.",
+        ),
+        th.Property(
+            "private_key_path",
+            th.StringType,
+            required=False,
+            description="Path to where the private key is stored. The private key is used to connect to snowflake. Either one of [`password`, `private_key`, `private_key_path`] is required.",
+        ),
+        th.Property(
+            "private_key_passphrase",
+            th.StringType,
+            required=False,
+            secret=True,
+            description="The passprhase used to protect the private key",
         ),
         th.Property(
             "account",

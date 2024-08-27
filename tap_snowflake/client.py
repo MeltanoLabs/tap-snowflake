@@ -8,15 +8,18 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
 import datetime
-
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
+from singer_sdk.exceptions import ConfigValidationError
 import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
@@ -74,14 +77,55 @@ class TableProfile:
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
-    @classmethod
-    def get_sqlalchemy_url(cls, config: dict) -> str:
+    def get_private_key(self):
+        """Get private key from the right location."""
+
+        try:
+            encoded_passphrase = self.config["private_key_passphrase"].encode()
+        except KeyError:
+            encoded_passphrase = None
+
+        if "private_key_path" in self.config:
+            with open(self.config["private_key_path"], "rb") as key:
+                key_content = key.read()
+        else:
+            key_content = self.config["private_key"].encode()
+
+        p_key = serialization.load_pem_private_key(
+            key_content, password=encoded_passphrase, backend=default_backend()
+        )
+
+        return p_key.private_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+
+    @cached_property
+    def auth_method(self):
+        """
+        Validate & return the authentication method based on config.
+
+        Cache computed auth_method to attribute `_auth_method`.
+        """
+
+        valid_auth_methods = {"private_key", "private_key_path", "password"}
+        config_auth_methods = [x for x in self.config if x in valid_auth_methods]
+        if len(config_auth_methods) != 1:
+            msg = f"One of {valid_auth_methods} must be specified"
+            raise ConfigValidationError(msg)
+        return config_auth_methods[0]
+
+    def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
+
         params = {
             "account": config["account"],
             "user": config["user"],
-            "password": config["password"],
         }
+
+        if self.auth_method == "password":
+            params["password"] = config["password"]
 
         for option in ["database", "schema", "warehouse", "role"]:
             if config.get(option):
@@ -95,10 +139,14 @@ class SnowflakeConnector(SQLConnector):
         Returns:
             A SQLAlchemy engine.
         """
+        connect_args = {}
+        if self.auth_method in ["private_key", "private_key_path"]:
+            connect_args["private_key"] = self.get_private_key()
         return sqlalchemy.create_engine(
             self.sqlalchemy_url,
             echo=False,
             pool_timeout=10,
+            connect_args=connect_args,
         )
 
     # overridden to filter out the information_schema from catalog discovery
@@ -113,16 +161,19 @@ class SnowflakeConnector(SQLConnector):
         engine = self.create_sqlalchemy_engine()
         inspected = sqlalchemy.inspect(engine)
         schema_names = [
-            schema_name
+            self._dialect.identifier_preparer.quote(schema_name)
             for schema_name in self.get_schema_names(engine, inspected)
             if schema_name.lower() != "information_schema"
         ]
-        for schema_name in schema_names:
-            # Iterate through each table and view
+        not_tables = not tables
+        table_schemas = {} if not_tables else set([x.split(".")[0] for x in tables])
+        table_schema_names = [x for x in schema_names if x in table_schemas] or schema_names
+        for schema_name in table_schema_names:
+            # Iterate through each table and view of relevant schemas
             for table_name, is_view in self.get_object_names(
                 engine, inspected, schema_name
             ):
-                if (not tables) or (f"{schema_name}.{table_name}" in tables):
+                if not_tables or (f"{schema_name}.{table_name}" in tables):
                     catalog_entry = self.discover_catalog_entry(
                         engine, inspected, schema_name, table_name, is_view
                     )
