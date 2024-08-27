@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "meltanolabs-tap-snowflake"
 version = "0.0.0"
-description = "`tap-snowflake` is a Singer tap for Snowflake, built with the Meltano SDK for Singer Taps."
+description = "Singer tap for Snowflake, built with the Meltano SDK for Singer Taps."
 readme = "README.md"
 authors = ["Meltano Team <hello@meltano.com>"]
 keywords = [
     "ELT",
     "Snowflake",
 ]
-license = "Apache 2.0"
+license = "Apache-2.0"
 packages = [
     { include = "tap_snowflake" },
 ]
