@@ -34,7 +34,7 @@ def patched_conform(
     """Overrides Singer SDK type conformance to prevent dates turning into datetimes.
 
     Converts a primitive (i.e. not object or array) to a json compatible type.
-    
+
     Returns:
         The appropriate json compatible type.
     """

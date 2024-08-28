@@ -65,7 +65,8 @@ class TapSnowflake(SQLTap):
             required=True,
             description=(
                 "Your account identifier. See [Account Identifiers]"
-                f"({SFLAKE_DOCS}/admin-account-identifier.html)."),
+                f"({SFLAKE_DOCS}/admin-account-identifier.html)."
+            ),
         ),
         th.Property(
             "database",
