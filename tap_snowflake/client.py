@@ -5,6 +5,7 @@ This includes SnowflakeStream and SnowflakeConnector.
 
 from __future__ import annotations
 
+import datetime
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -12,15 +13,15 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
-import datetime
+
+import singer_sdk.helpers._typing
+import sqlalchemy
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
+from singer_sdk.exceptions import ConfigValidationError
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
-from singer_sdk.exceptions import ConfigValidationError
-import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
