@@ -21,6 +21,24 @@ tap is available by running:
 tap-snowflake --about
 ```
 
+### `tables` configuration parameter.
+
+An array of the table names that you want to sync. The table names should be fully qualified, including schema and table name.
+
+NOTES: 
+* This limits discovery to the tables specified for performance reasons. Do not specify `tables` if you intend to discover the entire available catalog.
+* Syntax to specify `tables` differs slightly from `select` (`schema_name.table_name` vs `schema_name-table_name.*`)
+
+:bulb: When adding more elements to `select` ensure the table is specified in `tables` if using `tables`. 
+
+Example:
+```yaml
+  ...
+  tables:
+    - schema_name1.table1
+    - schema_name1.table2
+```
+
 ### Configure using environment variables
 
 This Singer tap will automatically import any environment variables within the working directory's

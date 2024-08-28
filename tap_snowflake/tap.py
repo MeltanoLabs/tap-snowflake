@@ -81,7 +81,8 @@ class TapSnowflake(SQLTap):
                 "should be fully qualified, including schema and table name. "
                 "NOTE: this limits discovery to the tables specified, for performance "
                 "reasons. Do not specify `tables` if you intend to discover the entire "
-                "available catalog."
+                "available catalog. See readme for more details on the tables configuration "
+                "parameter."
             ),
         ),
     ).to_dict()
