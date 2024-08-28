@@ -5,6 +5,7 @@ This includes SnowflakeStream and SnowflakeConnector.
 
 from __future__ import annotations
 
+import datetime
 import os
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -12,15 +13,15 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Iterable, List, Tuple
 from uuid import uuid4
-import datetime
+
+import singer_sdk.helpers._typing
+import sqlalchemy
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-import sqlalchemy
 from singer_sdk import SQLConnector, SQLStream, metrics
+from singer_sdk.exceptions import ConfigValidationError
 from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
-from singer_sdk.exceptions import ConfigValidationError
-import singer_sdk.helpers._typing
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
@@ -32,12 +33,15 @@ def patched_conform(
     property_schema: dict,
 ) -> Any:
     """Overrides Singer SDK type conformance to prevent dates turning into datetimes.
+
     Converts a primitive (i.e. not object or array) to a json compatible type.
+
     Returns:
         The appropriate json compatible type.
     """
     if isinstance(elem, datetime.date):
         return elem.isoformat()
+
     return unpatched_conform(elem=elem, property_schema=property_schema)
 
 
@@ -79,7 +83,6 @@ class SnowflakeConnector(SQLConnector):
 
     def get_private_key(self):
         """Get private key from the right location."""
-
         try:
             encoded_passphrase = self.config["private_key_passphrase"].encode()
         except KeyError:
@@ -103,12 +106,7 @@ class SnowflakeConnector(SQLConnector):
 
     @cached_property
     def auth_method(self):
-        """
-        Validate & return the authentication method based on config.
-
-        Cache computed auth_method to attribute `_auth_method`.
-        """
-
+        """Validate & return the authentication method based on config."""
         valid_auth_methods = {"private_key", "private_key_path", "password"}
         config_auth_methods = [x for x in self.config if x in valid_auth_methods]
         if len(config_auth_methods) != 1:
@@ -118,7 +116,6 @@ class SnowflakeConnector(SQLConnector):
 
     def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
-
         params = {
             "account": config["account"],
             "user": config["user"],
@@ -167,7 +164,9 @@ class SnowflakeConnector(SQLConnector):
         ]
         not_tables = not tables
         table_schemas = {} if not_tables else set([x.split(".")[0] for x in tables])
-        table_schema_names = [x for x in schema_names if x in table_schemas] or schema_names
+        table_schema_names = [
+            x for x in schema_names if x in table_schemas
+        ] or schema_names
         for schema_name in table_schema_names:
             # Iterate through each table and view of relevant schemas
             for table_name, is_view in self.get_object_names(
