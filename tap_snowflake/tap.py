@@ -5,6 +5,8 @@ from singer_sdk import typing as th  # JSON schema typing helpers
 
 from tap_snowflake.client import SnowflakeStream
 
+SFLAKE_DOCS = "https://docs.snowflake.com/en/user-guide"
+
 
 class TapSnowflake(SQLTap):
     """Snowflake tap class."""
@@ -25,20 +27,30 @@ class TapSnowflake(SQLTap):
             th.StringType,
             required=False,
             secret=True,
-            description="The password for your Snowflake user. Either one of [`password`, `private_key`, `private_key_path`] is required.",
+            description=(
+                "The password for your Snowflake user. One of "
+                "[`password`, `private_key`, `private_key_path`] is required."
+            ),
         ),
         th.Property(
             "private_key",
             th.StringType,
             required=False,
             secret=True,
-            description="The private key is used to connect to snowflake. Either one of [`password`, `private_key`, `private_key_path`] is required.",
+            description=(
+                "The private key is used to connect to snowflake. One of "
+                "[`password`, `private_key`, `private_key_path`] is required."
+            ),
         ),
         th.Property(
             "private_key_path",
             th.StringType,
             required=False,
-            description="Path to where the private key is stored. The private key is used to connect to snowflake. Either one of [`password`, `private_key`, `private_key_path`] is required.",
+            description=(
+                "Path to where the private key is stored. The private key is used "
+                "to connect to snowflake. One of [`password`, `private_key`, "
+                "`private_key_path`] is required."
+            ),
         ),
         th.Property(
             "private_key_passphrase",
@@ -51,7 +63,9 @@ class TapSnowflake(SQLTap):
             "account",
             th.StringType,
             required=True,
-            description="Your account identifier. See [Account Identifiers](https://docs.snowflake.com/en/user-guide/admin-account-identifier.html).",  # noqa: E501
+            description=(
+                "Your account identifier. See [Account Identifiers]"
+                f"({SFLAKE_DOCS}/admin-account-identifier.html)."),
         ),
         th.Property(
             "database",
@@ -81,8 +95,8 @@ class TapSnowflake(SQLTap):
                 "should be fully qualified, including schema and table name. "
                 "NOTE: this limits discovery to the tables specified, for performance "
                 "reasons. Do not specify `tables` if you intend to discover the entire "
-                "available catalog. See readme for more details on the tables configuration "
-                "parameter."
+                "available catalog. See readme for more details on the tables "
+                "configuration parameter."
             ),
         ),
     ).to_dict()

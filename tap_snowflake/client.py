@@ -32,12 +32,15 @@ def patched_conform(
     property_schema: dict,
 ) -> Any:
     """Overrides Singer SDK type conformance to prevent dates turning into datetimes.
+
     Converts a primitive (i.e. not object or array) to a json compatible type.
+    
     Returns:
         The appropriate json compatible type.
     """
     if isinstance(elem, datetime.date):
         return elem.isoformat()
+
     return unpatched_conform(elem=elem, property_schema=property_schema)
 
 
@@ -79,7 +82,6 @@ class SnowflakeConnector(SQLConnector):
 
     def get_private_key(self):
         """Get private key from the right location."""
-
         try:
             encoded_passphrase = self.config["private_key_passphrase"].encode()
         except KeyError:
@@ -103,12 +105,7 @@ class SnowflakeConnector(SQLConnector):
 
     @cached_property
     def auth_method(self):
-        """
-        Validate & return the authentication method based on config.
-
-        Cache computed auth_method to attribute `_auth_method`.
-        """
-
+        """Validate & return the authentication method based on config."""
         valid_auth_methods = {"private_key", "private_key_path", "password"}
         config_auth_methods = [x for x in self.config if x in valid_auth_methods]
         if len(config_auth_methods) != 1:
@@ -118,7 +115,6 @@ class SnowflakeConnector(SQLConnector):
 
     def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
-
         params = {
             "account": config["account"],
             "user": config["user"],
