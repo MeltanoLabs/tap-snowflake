@@ -25,6 +25,10 @@ from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMEN
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
+if t.TYPE_CHECKING:
+    from sqlalchemy.sql import Executable,   # type: ignore[attr-defined]
+    from sqlalchemy.engine import CursorResult
+
 unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
 
 
@@ -237,7 +241,7 @@ class SnowflakeConnector(SQLConnector):
             if ProfileStats.COLUMN_NULL_VALUES in stats:
                 expressions.append(f"count(1) - count({col}) as null__{col}")
         result_dict = (
-            self.connection.execute(
+            self.execute(
                 text(f"SELECT {', '.join(expressions)} FROM {full_table_name}")
             )
             .one()
@@ -256,6 +260,10 @@ class SnowflakeConnector(SQLConnector):
                 for col in profile_columns
             },
         )
+    
+    def execute(self, query: Executable) -> CursorResult:
+        with self._connect() as conn:
+            return conn.execute(query)
 
 
 class SnowflakeStream(SQLStream):
@@ -450,9 +458,9 @@ class SnowflakeStream(SQLStream):
             copy_statement, kwargs = self._get_copy_statement(
                 sync_id=sync_id, prefix=prefix, context=context
             )
-            self.connector.connection.execute(copy_statement, **kwargs).all()
+            self.connector.execute(copy_statement, **kwargs).all()
             # list available files
-            results = self.connector.connection.execute(
+            results = self.connector.execute(
                 text(f"list '@~/tap-snowflake/{sync_id}/'")
             ).all()
             # download available files
@@ -461,13 +469,13 @@ class SnowflakeStream(SQLStream):
             for result in results:
                 stage_path = result[0]
                 file_name = os.path.basename(stage_path)
-                self.connector.connection.execute(
+                self.connector.execute(
                     text(f"get '@~/{stage_path}' '{root}/{sync_id}'")
                 )
                 files.append(f"{root}/{sync_id}/{file_name}")
         finally:
             # remove staged files
-            self.connector.connection.execute(
+            self.connector.execute(
                 text(f"remove '@~/tap-snowflake/{sync_id}/'")
             )
         yield (batch_config.encoding, files)
@@ -515,5 +523,5 @@ class SnowflakeStream(SQLStream):
         if self.ABORT_AT_RECORD_COUNT is not None:
             query = query.limit(self.ABORT_AT_RECORD_COUNT)
 
-        for record in self.connector.connection.execute(query):
-            yield dict(record)
+        for record in self.connector.execute(query):
+            yield record._asdict()
