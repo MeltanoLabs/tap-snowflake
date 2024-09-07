@@ -524,5 +524,5 @@ class SnowflakeStream(SQLStream):
         if self.ABORT_AT_RECORD_COUNT is not None:
             query = query.limit(self.ABORT_AT_RECORD_COUNT)
 
-        for record in self.connector.execute(query):  # type: ignore[attr-defined]
-            yield record._asdict()
+        for record in self.connector.execute(query).mappings():  # type: ignore[attr-defined]
+            yield dict(record)
