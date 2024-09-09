@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterable, List, Tuple
+from typing import Any, Iterable, List, Tuple, TYPE_CHECKING
 from uuid import uuid4
 
 import singer_sdk.helpers._typing
@@ -24,6 +24,12 @@ from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql import Executable
+    from sqlalchemy.engine import CursorResult
+    from sqlalchemy.sql.elements import TextClause
+    from singer_sdk.helpers import types
 
 unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
 
@@ -237,7 +243,7 @@ class SnowflakeConnector(SQLConnector):
             if ProfileStats.COLUMN_NULL_VALUES in stats:
                 expressions.append(f"count(1) - count({col}) as null__{col}")
         result_dict = (
-            self.connection.execute(
+            self.execute(
                 text(f"SELECT {', '.join(expressions)} FROM {full_table_name}")
             )
             .one()
@@ -257,6 +263,11 @@ class SnowflakeConnector(SQLConnector):
             },
         )
 
+    def execute(self, query: Executable) -> CursorResult:
+        """Execute the sqlalchemy query and return the cursor result."""
+        with self._connect() as conn:
+            return conn.execute(query)
+
 
 class SnowflakeStream(SQLStream):
     """Stream class for Snowflake streams."""
@@ -271,7 +282,7 @@ class SnowflakeStream(SQLStream):
     def _sync_batches(
         self,
         batch_config: BatchConfig,
-        context: dict | None = None,
+        context: types.Context | None = None,
     ) -> None:
         """Sync batches, emitting BATCH messages.
 
@@ -323,7 +334,7 @@ class SnowflakeStream(SQLStream):
         self._write_state_message()
 
     def get_batches(
-        self, batch_config: BatchConfig, context: dict | None = None
+        self, batch_config: BatchConfig, context: types.Context | None = None
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Get batches of Records from Snowflake.
 
@@ -343,7 +354,7 @@ class SnowflakeStream(SQLStream):
 
     def _get_full_table_copy_statement(
         self, sync_id: str, prefix: str, objects: List[str], table_name: str
-    ) -> Tuple[text, dict]:
+    ) -> Tuple[TextClause, dict]:
         """Get FULL_TABLE copy statement and key bindings."""
         statement = [f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "]
         if self.replication_key:
@@ -370,7 +381,7 @@ class SnowflakeStream(SQLStream):
         objects: List[str],
         table_name: str,
         replication_key_value,
-    ) -> Tuple[text, dict]:
+    ) -> Tuple[TextClause, dict]:
         """Get INCREMENTAL copy statement and key bindings."""
         return (
             text(
@@ -385,8 +396,8 @@ class SnowflakeStream(SQLStream):
         )
 
     def _get_copy_statement(
-        self, sync_id: str, prefix: str, context: dict | None = None
-    ) -> Tuple[text, dict]:
+        self, sync_id: str, prefix: str, context: types.Context | None = None
+    ) -> Tuple[TextClause, dict]:
         """Construct copy statement.
 
         Takes into account stream property selection and incremental keys.
@@ -430,7 +441,7 @@ class SnowflakeStream(SQLStream):
             )
 
     def get_batches_from_internal_user_stage(
-        self, batch_config: BatchConfig, context: dict | None = None
+        self, batch_config: BatchConfig, context: types.Context | None = None
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Unload Snowflake table to User Internal Stage, and download files to local storage.
 
@@ -450,9 +461,9 @@ class SnowflakeStream(SQLStream):
             copy_statement, kwargs = self._get_copy_statement(
                 sync_id=sync_id, prefix=prefix, context=context
             )
-            self.connector.connection.execute(copy_statement, **kwargs).all()
+            self.connector.execute(copy_statement, **kwargs).all()  # type: ignore[attr-defined]
             # list available files
-            results = self.connector.connection.execute(
+            results = self.connector.execute(  # type: ignore[attr-defined]
                 text(f"list '@~/tap-snowflake/{sync_id}/'")
             ).all()
             # download available files
@@ -461,20 +472,18 @@ class SnowflakeStream(SQLStream):
             for result in results:
                 stage_path = result[0]
                 file_name = os.path.basename(stage_path)
-                self.connector.connection.execute(
+                self.connector.execute(  # type: ignore[attr-defined]
                     text(f"get '@~/{stage_path}' '{root}/{sync_id}'")
                 )
                 files.append(f"{root}/{sync_id}/{file_name}")
         finally:
             # remove staged files
-            self.connector.connection.execute(
-                text(f"remove '@~/tap-snowflake/{sync_id}/'")
-            )
+            self.connector.execute(text(f"remove '@~/tap-snowflake/{sync_id}/'"))  # type: ignore[attr-defined]
         yield (batch_config.encoding, files)
 
     # Get records from stream
     # Overridden to use native objects under `if start_val:`
-    def get_records(self, context: dict | None) -> Iterable[dict[str, Any]]:
+    def get_records(self, context: types.Context | None) -> Iterable[dict[str, Any]]:
         """Return a generator of record-type dictionary objects.
 
         If the stream has a replication_key value defined, records will be sorted by the
@@ -515,5 +524,5 @@ class SnowflakeStream(SQLStream):
         if self.ABORT_AT_RECORD_COUNT is not None:
             query = query.limit(self.ABORT_AT_RECORD_COUNT)
 
-        for record in self.connector.connection.execute(query):
+        for record in self.connector.execute(query).mappings():  # type: ignore[attr-defined]
             yield dict(record)
