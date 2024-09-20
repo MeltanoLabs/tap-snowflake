@@ -54,6 +54,14 @@ def patched_conform(
 singer_sdk.helpers._typing._conform_primitive_property = patched_conform
 
 
+class SnowflakeAuthMethod(Enum):
+    """Supported methods to authenticate to snowflake"""
+
+    BROWSER = 1
+    PASSWORD = 2
+    KEY_PAIR = 3
+
+
 class ProfileStats(Enum):
     """Profile Statistics Enum."""
 
@@ -111,14 +119,23 @@ class SnowflakeConnector(SQLConnector):
         )
 
     @cached_property
-    def auth_method(self):
+    def auth_method(self) -> SnowflakeAuthMethod:
         """Validate & return the authentication method based on config."""
+        if self.config.get("use_browser_authentication"):
+            return SnowflakeAuthMethod.BROWSER
+
         valid_auth_methods = {"private_key", "private_key_path", "password"}
         config_auth_methods = [x for x in self.config if x in valid_auth_methods]
         if len(config_auth_methods) != 1:
-            msg = f"One of {valid_auth_methods} must be specified"
+            msg = (
+                "Neither password nor private key was provided for "
+                "authentication. For password-less browser authentication via SSO, "
+                "set use_browser_authentication config option to True."
+            )
             raise ConfigValidationError(msg)
-        return config_auth_methods[0]
+        if config_auth_methods[0] in ["private_key", "private_key_path"]:
+            return SnowflakeAuthMethod.KEY_PAIR
+        return SnowflakeAuthMethod.PASSWORD
 
     def get_sqlalchemy_url(self, config: dict) -> str:
         """Concatenate a SQLAlchemy URL for use in connecting to the source."""
@@ -127,7 +144,9 @@ class SnowflakeConnector(SQLConnector):
             "user": config["user"],
         }
 
-        if self.auth_method == "password":
+        if self.auth_method == SnowflakeAuthMethod.BROWSER:
+            params["authenticator"] = "externalbrowser"
+        elif self.auth_method == SnowflakeAuthMethod.PASSWORD:
             params["password"] = config["password"]
 
         for option in ["database", "schema", "warehouse", "role"]:
@@ -143,7 +162,7 @@ class SnowflakeConnector(SQLConnector):
             A SQLAlchemy engine.
         """
         connect_args = {}
-        if self.auth_method in ["private_key", "private_key_path"]:
+        if self.auth_method == SnowflakeAuthMethod.KEY_PAIR:
             connect_args["private_key"] = self.get_private_key()
         return sqlalchemy.create_engine(
             self.sqlalchemy_url,
