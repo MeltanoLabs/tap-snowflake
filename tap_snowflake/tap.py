@@ -60,6 +60,16 @@ class TapSnowflake(SQLTap):
             description="The passprhase used to protect the private key",
         ),
         th.Property(
+            "use_browser_authentication",
+            th.BooleanType,
+            required=False,
+            default=False,
+            description=(
+                "If authentication should be done using SSO (via external browser). "
+                "See SSO browser authentication."
+            )
+        ),
+        th.Property(
             "account",
             th.StringType,
             required=True,
