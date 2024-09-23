@@ -102,7 +102,7 @@ class SnowflakeConnector(SQLConnector):
             encoded_passphrase = None
 
         if "private_key_path" in self.config:
-            with Path.open(self.config["private_key_path"], "rb") as key:
+            with Path(self.config["private_key_path"].open("rb") as key:
                 key_content = key.read()
         else:
             key_content = self.config["private_key"].encode()
