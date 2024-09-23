@@ -494,7 +494,7 @@ class SnowflakeStream(SQLStream):
             Path(local_path).mkdir(parents=True, exist_ok=True)
             for result in results:
                 stage_path = result[0]
-                file_name = Path.name(stage_path)
+                file_name = Path(stage_path).name
                 self.connector.execute(  # type: ignore[attr-defined]
                     text(f"get '@~/{stage_path}' '{root}/{sync_id}'"),
                 )
