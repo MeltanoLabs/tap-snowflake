@@ -6,12 +6,11 @@ This includes SnowflakeStream and SnowflakeConnector.
 from __future__ import annotations
 
 import datetime
-import os
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import Any, Iterable, List, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Iterable
 from uuid import uuid4
 
 import singer_sdk.helpers._typing
@@ -20,16 +19,16 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from singer_sdk import SQLConnector, SQLStream, metrics
 from singer_sdk.exceptions import ConfigValidationError
-from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
 if TYPE_CHECKING:
-    from sqlalchemy.sql import Executable
-    from sqlalchemy.engine import CursorResult
-    from sqlalchemy.sql.elements import TextClause
     from singer_sdk.helpers import types
+    from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
+    from sqlalchemy.engine import CursorResult
+    from sqlalchemy.sql import Executable
+    from sqlalchemy.sql.elements import TextClause
 
 unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
 
@@ -103,13 +102,13 @@ class SnowflakeConnector(SQLConnector):
             encoded_passphrase = None
 
         if "private_key_path" in self.config:
-            with open(self.config["private_key_path"], "rb") as key:
+            with Path.open(self.config["private_key_path"], "rb") as key:
                 key_content = key.read()
         else:
             key_content = self.config["private_key"].encode()
 
         p_key = serialization.load_pem_private_key(
-            key_content, password=encoded_passphrase, backend=default_backend()
+            key_content, password=encoded_passphrase, backend=default_backend(),
         )
 
         return p_key.private_bytes(
@@ -188,18 +187,18 @@ class SnowflakeConnector(SQLConnector):
             if schema_name.lower() != "information_schema"
         ]
         not_tables = not tables
-        table_schemas = {} if not_tables else set([x.split(".")[0] for x in tables])
+        table_schemas = {} if not_tables else {x.split(".")[0] for x in tables}
         table_schema_names = [
             x for x in schema_names if x in table_schemas
         ] or schema_names
         for schema_name in table_schema_names:
             # Iterate through each table and view of relevant schemas
             for table_name, is_view in self.get_object_names(
-                engine, inspected, schema_name
+                engine, inspected, schema_name,
             ):
                 if not_tables or (f"{schema_name}.{table_name}" in tables):
                     catalog_entry = self.discover_catalog_entry(
-                        engine, inspected, schema_name, table_name, is_view
+                        engine, inspected, schema_name, table_name, is_view,
                     )
                     result.append(catalog_entry.to_dict())
 
@@ -247,7 +246,7 @@ class SnowflakeConnector(SQLConnector):
             expressions.append("count(1) as row_count")
         if ProfileStats.TABLE_SIZE_IN_MB in stats:
             self.logger.debug(
-                "TABLE_SIZE_IN_MB stats not implemented for this provider."
+                "TABLE_SIZE_IN_MB stats not implemented for this provider.",
             )
         for col in profile_columns or []:
             if ProfileStats.COLUMN_MIN_VALUE in stats:
@@ -263,7 +262,7 @@ class SnowflakeConnector(SQLConnector):
                 expressions.append(f"count(1) - count({col}) as null__{col}")
         result_dict = (
             self.execute(
-                text(f"SELECT {', '.join(expressions)} FROM {full_table_name}")
+                text(f"SELECT {', '.join(expressions)} FROM {full_table_name}"),
             )
             .one()
             ._asdict()
@@ -324,7 +323,7 @@ class SnowflakeStream(SQLStream):
         max_replication_key_value = None
         if self.replication_key:
             table_profile: TableProfile = (
-                self.connector.get_table_profile(  # type: ignore
+                self.connector.get_table_profile(  # type: ignore[attr-defined]
                     full_table_name=self.fully_qualified_name,
                     stats={ProfileStats.COLUMN_MAX_VALUE},
                     profile_columns=[self.replication_key],
@@ -346,14 +345,15 @@ class SnowflakeStream(SQLStream):
         if max_replication_key_value:
             self._increment_stream_state(
                 latest_record={
-                    self.replication_key: max_replication_key_value  # type: ignore
+                    self.replication_key: max_replication_key_value,  # type: ignore[dict-item]
                 },
                 context=context,
             )
         self._write_state_message()
 
     def get_batches(
-        self, batch_config: BatchConfig, context: types.Context | None = None
+        self, batch_config: BatchConfig,
+        context: types.Context | None = None,
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Get batches of Records from Snowflake.
 
@@ -367,26 +367,30 @@ class SnowflakeStream(SQLStream):
         """
         if context:
             raise NotImplementedError(
-                f"Stream '{self.name}' does not support partitioning."
+                f"Stream '{self.name}' does not support partitioning.",
             )
         yield from self.get_batches_from_internal_user_stage(batch_config, context)
 
     def _get_full_table_copy_statement(
-        self, sync_id: str, prefix: str, objects: List[str], table_name: str
-    ) -> Tuple[TextClause, dict]:
+        self,
+        sync_id: str,
+        prefix: str,
+        objects: list[str],
+        table_name: str,
+    ) -> tuple[TextClause, dict]:
         """Get FULL_TABLE copy statement and key bindings."""
         statement = [f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "]
         if self.replication_key:
             statement.append(
                 f"(select object_construct({', '.join(objects)}) from {table_name} "
-                f"order by {self.replication_key}) "
+                f"order by {self.replication_key}) ",
             )
         else:
             statement.append(
-                f"(select object_construct({', '.join(objects)}) from {table_name}) "
+                f"(select object_construct({', '.join(objects)}) from {table_name}) ",
             )
         statement.append(
-            "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
+            "file_format = (type='JSON', compression='GZIP') overwrite = TRUE",
         )
         return (
             text("".join(statement)),
@@ -397,32 +401,35 @@ class SnowflakeStream(SQLStream):
         self,
         sync_id: str,
         prefix: str,
-        objects: List[str],
+        objects: list[str],
         table_name: str,
         replication_key_value,
-    ) -> Tuple[TextClause, dict]:
+    ) -> tuple[TextClause, dict]:
         """Get INCREMENTAL copy statement and key bindings."""
         return (
             text(
                 f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "
-                + f"(select object_construct({', '.join(objects)}) "
-                + f"from {table_name} "
-                + f"where {self.replication_key} >= :replication_key_value "
-                + f"order by {self.replication_key}) "
-                + "file_format = (type='JSON', compression='GZIP') overwrite = TRUE"
+                f"(select object_construct({', '.join(objects)}) "
+                f"from {table_name} "
+                f"where {self.replication_key} >= :replication_key_value "
+                f"order by {self.replication_key}) "
+                "file_format = (type='JSON', compression='GZIP') overwrite = TRUE",
             ),
             {"replication_key_value": replication_key_value},
         )
 
     def _get_copy_statement(
-        self, sync_id: str, prefix: str, context: types.Context | None = None
-    ) -> Tuple[TextClause, dict]:
+        self,
+        sync_id: str,
+        prefix: str,
+        context: types.Context | None = None,
+    ) -> tuple[TextClause, dict]:
         """Construct copy statement.
 
         Takes into account stream property selection and incremental keys.
         """
         selected_schema = self.get_selected_schema()
-        objects = [f"'{col}', {col}" for col in selected_schema["properties"].keys()]
+        objects = [f"'{col}', {col}" for col in selected_schema["properties"]]
 
         if self.replication_method == REPLICATION_FULL_TABLE:
             return self._get_full_table_copy_statement(
@@ -432,7 +439,7 @@ class SnowflakeStream(SQLStream):
                 table_name=self.fully_qualified_name,
             )
 
-        elif self.replication_method == REPLICATION_INCREMENTAL:
+        if self.replication_method == REPLICATION_INCREMENTAL:
             replication_key_value = (
                 self.get_starting_timestamp(context=context)
                 if self.is_timestamp_replication_key
@@ -446,21 +453,19 @@ class SnowflakeStream(SQLStream):
                     table_name=self.fully_qualified_name,
                     replication_key_value=replication_key_value,
                 )
-            else:
-                return self._get_full_table_copy_statement(
-                    sync_id=sync_id,
-                    prefix=prefix,
-                    objects=objects,
-                    table_name=self.fully_qualified_name,
-                )
-        else:
-            raise NotImplementedError(
-                "Only 'FULL_TABLE' and 'INCREMENTAL' replication strategies "
-                "are supported by this tap."
+            return self._get_full_table_copy_statement(
+                sync_id=sync_id,
+                prefix=prefix,
+                objects=objects,
+                table_name=self.fully_qualified_name,
             )
+        raise NotImplementedError(
+            "Only 'FULL_TABLE' and 'INCREMENTAL' replication strategies "
+            "are supported by this tap.",
+        )
 
     def get_batches_from_internal_user_stage(
-        self, batch_config: BatchConfig, context: types.Context | None = None
+        self, batch_config: BatchConfig, context: types.Context | None = None,
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Unload Snowflake table to User Internal Stage, and download files to local storage.
 
@@ -468,8 +473,8 @@ class SnowflakeStream(SQLStream):
         for each user.
 
         More details on how this works can be found in the Snowflake docs:
-        https://docs.snowflake.com/en/user-guide/data-unload-snowflake.html#unloading-data-to-your-user-stage  # noqa: E501
-        """
+        https://docs.snowflake.com/en/user-guide/data-unload-snowflake.html#unloading-data-to-your-user-stage
+        """  # noqa: E501
         root = batch_config.storage.root
         sync_id = f"{self.tap_name}--{self.name}-{uuid4()}"
         prefix = batch_config.storage.prefix or ""
@@ -478,21 +483,21 @@ class SnowflakeStream(SQLStream):
         try:
             # unload table into user internal stage
             copy_statement, kwargs = self._get_copy_statement(
-                sync_id=sync_id, prefix=prefix, context=context
+                sync_id=sync_id, prefix=prefix, context=context,
             )
             self.connector.execute(copy_statement, **kwargs).all()  # type: ignore[attr-defined]
             # list available files
             results = self.connector.execute(  # type: ignore[attr-defined]
-                text(f"list '@~/tap-snowflake/{sync_id}/'")
+                text(f"list '@~/tap-snowflake/{sync_id}/'"),
             ).all()
             # download available files
             local_path = f"{root.replace('file://', '')}/{sync_id}"
             Path(local_path).mkdir(parents=True, exist_ok=True)
             for result in results:
                 stage_path = result[0]
-                file_name = os.path.basename(stage_path)
+                file_name = Path.name(stage_path)
                 self.connector.execute(  # type: ignore[attr-defined]
-                    text(f"get '@~/{stage_path}' '{root}/{sync_id}'")
+                    text(f"get '@~/{stage_path}' '{root}/{sync_id}'"),
                 )
                 files.append(f"{root}/{sync_id}/{file_name}")
         finally:
@@ -522,7 +527,7 @@ class SnowflakeStream(SQLStream):
         """
         if context:
             raise NotImplementedError(
-                f"Stream '{self.name}' does not support partitioning."
+                f"Stream '{self.name}' does not support partitioning.",
             )
 
         selected_column_names = self.get_selected_schema()["properties"].keys()

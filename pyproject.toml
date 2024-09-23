@@ -31,11 +31,37 @@ pydocstyle = "^6.1.1"
 singer-sdk = {extras = ["testing"], version = "*"}
 tox = "^3.24.4"
 types-requests = "^2.26.1"
+ruff = "^0.6.7"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3 # Vertical Hanging Indent
 src_paths = "tap_snowflake"
+
+[tool.ruff]
+line-length = 88
+src = ["target_snowflake"]
+target-version = "py38"
+
+[tool.ruff.lint]
+ignore = [
+    "ANN101",  # missing-type-self
+    "ANN102",  # missing-type-cls
+    "ANN201",
+    "ANN001",
+    "ANN401",
+    "TD",
+    "D",
+    "FIX",
+    "S608",
+    "EM101",
+    "EM102",
+    "SLF001",
+]
+select = ["ALL"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["target_snowflake"]
 
 [build-system]
 requires = ["poetry-core>=1.0.8", "poetry-dynamic-versioning"]

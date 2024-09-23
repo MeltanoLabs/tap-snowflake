@@ -67,7 +67,7 @@ class TapSnowflake(SQLTap):
             description=(
                 "If authentication should be done using SSO (via external browser). "
                 "See SSO browser authentication."
-            )
+            ),
         ),
         th.Property(
             "account",
