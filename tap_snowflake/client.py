@@ -102,13 +102,15 @@ class SnowflakeConnector(SQLConnector):
             encoded_passphrase = None
 
         if "private_key_path" in self.config:
-            with Path(self.config["private_key_path"].open("rb") as key:
+            with Path(self.config["private_key_path"]).open("rb") as key:
                 key_content = key.read()
         else:
             key_content = self.config["private_key"].encode()
 
         p_key = serialization.load_pem_private_key(
-            key_content, password=encoded_passphrase, backend=default_backend(),
+            key_content,
+            password=encoded_passphrase,
+            backend=default_backend(),
         )
 
         return p_key.private_bytes(
@@ -194,11 +196,17 @@ class SnowflakeConnector(SQLConnector):
         for schema_name in table_schema_names:
             # Iterate through each table and view of relevant schemas
             for table_name, is_view in self.get_object_names(
-                engine, inspected, schema_name,
+                engine,
+                inspected,
+                schema_name,
             ):
                 if not_tables or (f"{schema_name}.{table_name}" in tables):
                     catalog_entry = self.discover_catalog_entry(
-                        engine, inspected, schema_name, table_name, is_view,
+                        engine,
+                        inspected,
+                        schema_name,
+                        table_name,
+                        is_view,
                     )
                     result.append(catalog_entry.to_dict())
 
@@ -322,12 +330,10 @@ class SnowflakeStream(SQLStream):
         # New: Collect the max value for the replication column.
         max_replication_key_value = None
         if self.replication_key:
-            table_profile: TableProfile = (
-                self.connector.get_table_profile(  # type: ignore[attr-defined]
-                    full_table_name=self.fully_qualified_name,
-                    stats={ProfileStats.COLUMN_MAX_VALUE},
-                    profile_columns=[self.replication_key],
-                )
+            table_profile: TableProfile = self.connector.get_table_profile(  # type: ignore[attr-defined]
+                full_table_name=self.fully_qualified_name,
+                stats={ProfileStats.COLUMN_MAX_VALUE},
+                profile_columns=[self.replication_key],
             )
             max_replication_key_value = table_profile.column_profiles[
                 self.replication_key
@@ -352,7 +358,8 @@ class SnowflakeStream(SQLStream):
         self._write_state_message()
 
     def get_batches(
-        self, batch_config: BatchConfig,
+        self,
+        batch_config: BatchConfig,
         context: types.Context | None = None,
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Get batches of Records from Snowflake.
@@ -464,7 +471,9 @@ class SnowflakeStream(SQLStream):
         )
 
     def get_batches_from_internal_user_stage(
-        self, batch_config: BatchConfig, context: types.Context | None = None,
+        self,
+        batch_config: BatchConfig,
+        context: types.Context | None = None,
     ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
         """Unload Snowflake table to User Internal Stage, and download files to local storage.
 
@@ -482,7 +491,9 @@ class SnowflakeStream(SQLStream):
         try:
             # unload table into user internal stage
             copy_statement, kwargs = self._get_copy_statement(
-                sync_id=sync_id, prefix=prefix, context=context,
+                sync_id=sync_id,
+                prefix=prefix,
+                context=context,
             )
             self.connector.execute(copy_statement, **kwargs).all()  # type: ignore[attr-defined]
             # list available files
