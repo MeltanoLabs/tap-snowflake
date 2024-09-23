@@ -23,19 +23,44 @@ sqlalchemy = "~=2.0.34"
 cryptography = ">=3.4.6,<42.0.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^22.3.0"
-flake8 = "^3.9.2"
-isort = "^5.10.1"
 mypy = "^0.991"
-pydocstyle = "^6.1.1"
 singer-sdk = {extras = ["testing"], version = "*"}
 tox = "^3.24.4"
 types-requests = "^2.26.1"
+ruff = "^0.6.7"
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3 # Vertical Hanging Indent
 src_paths = "tap_snowflake"
+
+[tool.ruff]
+line-length = 88
+src = ["target_snowflake"]
+target-version = "py38"
+
+[tool.ruff.lint]
+ignore = [
+    "ANN001",
+    "ANN401",
+    "S608",
+    "SLF001",
+    "EM101",
+]
+select = ["ALL"]
+
+[tool.ruff.format]
+quote-style = "double"
+exclude = ["*.pyi"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["target_snowflake"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [build-system]
 requires = ["poetry-core>=1.0.8", "poetry-dynamic-versioning"]
