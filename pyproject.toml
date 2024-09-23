@@ -41,18 +41,11 @@ target-version = "py38"
 
 [tool.ruff.lint]
 ignore = [
-    "ANN101",  # missing-type-self
-    "ANN102",  # missing-type-cls
-    "ANN201",
     "ANN001",
     "ANN401",
-    "TD",
-    "D",
-    "FIX",
     "S608",
-    "EM101",
-    "EM102",
     "SLF001",
+    "EM101",
 ]
 select = ["ALL"]
 

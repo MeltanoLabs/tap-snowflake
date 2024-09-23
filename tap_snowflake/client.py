@@ -54,7 +54,7 @@ singer_sdk.helpers._typing._conform_primitive_property = patched_conform
 
 
 class SnowflakeAuthMethod(Enum):
-    """Supported methods to authenticate to snowflake"""
+    """Supported methods to authenticate to snowflake."""
 
     BROWSER = 1
     PASSWORD = 2
@@ -94,7 +94,7 @@ class TableProfile:
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
 
-    def get_private_key(self):
+    def get_private_key(self) -> bytes:
         """Get private key from the right location."""
         try:
             encoded_passphrase = self.config["private_key_passphrase"].encode()
@@ -293,7 +293,7 @@ class SnowflakeStream(SQLStream):
     connector_class = SnowflakeConnector
 
     @property
-    def is_sorted(self):
+    def is_sorted(self) -> bool:
         """Is sorted."""
         return bool(self.replication_key)
 
@@ -366,9 +366,8 @@ class SnowflakeStream(SQLStream):
         https://docs.snowflake.com/en/user-guide-data-unload.html
         """
         if context:
-            raise NotImplementedError(
-                f"Stream '{self.name}' does not support partitioning.",
-            )
+            msg = f"Stream '{self.name}' does not support partitioning."
+            raise NotImplementedError(msg)
         yield from self.get_batches_from_internal_user_stage(batch_config, context)
 
     def _get_full_table_copy_statement(
@@ -526,9 +525,8 @@ class SnowflakeStream(SQLStream):
                 not support partitioning.
         """
         if context:
-            raise NotImplementedError(
-                f"Stream '{self.name}' does not support partitioning.",
-            )
+            msg = f"Stream '{self.name}' does not support partitioning."
+            raise NotImplementedError(msg)
 
         selected_column_names = self.get_selected_schema()["properties"].keys()
         table = self.connector.get_table(
