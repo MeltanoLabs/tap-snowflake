@@ -162,7 +162,10 @@ class SnowflakeConnector(SQLConnector):
         Returns:
             A SQLAlchemy engine.
         """
-        connect_args = {}
+        connect_args: dict[str, Any] = {
+            "client_request_mfa_token": True,
+            "client_store_temporary_credential": True,
+        }
         if self.auth_method == SnowflakeAuthMethod.KEY_PAIR:
             connect_args["private_key"] = self.get_private_key()
         return sqlalchemy.create_engine(
