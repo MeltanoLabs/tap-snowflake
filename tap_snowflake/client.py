@@ -162,18 +162,25 @@ class SnowflakeConnector(SQLConnector):
         Returns:
             A SQLAlchemy engine.
         """
+        import contextlib
+        import sys
+
         connect_args: dict[str, Any] = {
             "client_request_mfa_token": True,
             "client_store_temporary_credential": True,
         }
         if self.auth_method == SnowflakeAuthMethod.KEY_PAIR:
             connect_args["private_key"] = self.get_private_key()
-        return sqlalchemy.create_engine(
-            self.sqlalchemy_url,
-            echo=False,
-            pool_timeout=10,
-            connect_args=connect_args,
-        )
+
+        # Redirect stdout to stderr during engine creation to
+        # handle browser auth messages
+        with contextlib.redirect_stdout(sys.stderr):
+            return sqlalchemy.create_engine(
+                self.sqlalchemy_url,
+                echo=False,
+                pool_timeout=10,
+                connect_args=connect_args,
+            )
 
     # overridden to filter out the information_schema from catalog discovery
     def discover_catalog_entries(self) -> list[dict]:
