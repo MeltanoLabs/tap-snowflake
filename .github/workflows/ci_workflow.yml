@@ -43,6 +43,7 @@ jobs:
       SF_WAREHOUSE: ${{secrets.SF_WAREHOUSE}}
       SF_ROLE: ${{secrets.SF_ROLE}}
     strategy:
+      max-parallel: 2
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
 
