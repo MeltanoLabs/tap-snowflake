@@ -63,7 +63,7 @@ convention = "google"
 max-complexity = 10
 
 [build-system]
-requires = ["poetry-core>=1.0.8", "poetry-dynamic-versioning"]
+requires = ["poetry-core==2.0.1", "poetry-dynamic-versioning==1.7.1"]
 build-backend = "poetry_dynamic_versioning.backend"
 
 [tool.poetry.scripts]
