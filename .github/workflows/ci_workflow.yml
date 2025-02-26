@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # Only lint using the primary version used for dev
-        python-version: ["3.10"]
+        python-version: ["3.13"]
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -23,7 +23,7 @@ jobs:
     - name: Install Poetry
       run: |
         python -m pip install --upgrade pip
-        pip install poetry==1.2.*
+        pip install poetry==1.8.*
     - name: Install dependencies
       run: |
         poetry install
@@ -43,9 +43,10 @@ jobs:
       SF_WAREHOUSE: ${{secrets.SF_WAREHOUSE}}
       SF_ROLE: ${{secrets.SF_ROLE}}
     strategy:
+      fail-fast: false
       max-parallel: 2
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -56,7 +57,7 @@ jobs:
     - name: Install Poetry
       run: |
         python -m pip install --upgrade pip
-        pip install poetry==1.2.*
+        pip install poetry==1.8.*
     - name: Install dependencies
       run: |
         poetry install
