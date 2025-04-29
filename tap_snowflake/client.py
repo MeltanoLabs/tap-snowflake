@@ -94,8 +94,6 @@ class SnowflakeConnector(SQLConnector):
         params = {
             "account": config["account"],
             "user": config["user"],
-            "disable_ocsp_checks": True,
-            "insecure_mode": True
         }
 
         for option in ["database", "schema", "warehouse", "role", "password"]:
@@ -125,7 +123,11 @@ class SnowflakeConnector(SQLConnector):
                 format=serialization.PrivateFormat.PKCS8,
                 encryption_algorithm=serialization.NoEncryption(),
             )
-            connect_args = {'private_key': pkb, 'client_session_keep_alive': True}
+            connect_args = {'private_key': pkb, 
+                            'client_session_keep_alive': True, 
+                            "disable_ocsp_checks": True,
+                            "insecure_mode": True
+                           }
 
         return sqlalchemy.create_engine(
             self.sqlalchemy_url, echo=False, pool_timeout=10, connect_args=connect_args
