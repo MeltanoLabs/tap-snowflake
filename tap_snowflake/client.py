@@ -94,6 +94,8 @@ class SnowflakeConnector(SQLConnector):
         params = {
             "account": config["account"],
             "user": config["user"],
+            "disable_ocsp_checks": True,
+            "insecure_mode": True
         }
 
         for option in ["database", "schema", "warehouse", "role", "password"]:
