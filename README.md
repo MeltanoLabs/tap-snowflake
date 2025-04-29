@@ -8,10 +8,10 @@ Built with the [Meltano Tap SDK](https://sdk.meltano.com) for Singer Taps.
 Adapted from Meltano's tap to support key pair authentication to Snowflake.
 - install with `meltano add --custom extractor tap-snowflake`
   - namespace: tap-snowflake
-  - pip_url: git+https://github.com/JamieSplitit/tap-snowflake.git
+  - pip_url: git+https://github.com/Obakalash/tap-snowflake.git
   - executable name: tap-snowflake
-  - capabilities: `catalog,state,discover,about,stream-maps,schema-flattening`
-  - settings: `account,database,schema,user,password:password,warehouse,role,private_key:password,private_key_passphrase:password,stream_maps:object,stream_map_config:object,flattening_enabled:boolean,flattening_max_depth:integer`
+  - capabilities: `catalog,batch,state,discover,about,stream-maps,schema-flattening`
+  - settings: `account,database,schema,user,password:password,warehouse,role,private_key:password,private_key_passphrase:password,tables,stream_maps:object,stream_map_config:object,flattening_enabled:boolean,flattening_max_depth:integer`
 
 
 ## Installation
