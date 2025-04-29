@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterable
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import singer_sdk.helpers._typing
@@ -26,6 +26,8 @@ from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from singer_sdk.helpers import types
     from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
     from sqlalchemy.engine import Connection, CursorResult
@@ -200,7 +202,7 @@ class SnowflakeConnector(SQLConnector):
                 with self._redirect_stdout_to_stderr():
                     return original_connect(*args, **kwargs)
 
-            engine.connect = wrapped_connect
+            engine.connect = wrapped_connect  # type: ignore[method-assign]
 
         return engine
 
