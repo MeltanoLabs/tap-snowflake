@@ -124,9 +124,7 @@ class SnowflakeConnector(SQLConnector):
                 encryption_algorithm=serialization.NoEncryption(),
             )
             connect_args = {'private_key': pkb, 
-                            'client_session_keep_alive': True, 
-                            "disable_ocsp_checks": True,
-                            "insecure_mode": True
+                            'client_session_keep_alive': True,
                            }
 
         return sqlalchemy.create_engine(
