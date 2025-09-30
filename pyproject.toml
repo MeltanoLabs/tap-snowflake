@@ -15,18 +15,18 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.9"
+python = ">=3.10"
 cryptography = ">=40"
 singer-sdk = "~=0.39.1"
 snowflake-sqlalchemy = "1.6.1"
 snowflake-connector-python = { version = "~=3.15.0", extras = ["secure-local-storage"] }
-sqlalchemy = "~=2.0.34"
+sqlalchemy = "~=2.0.43"
 
 [tool.poetry.group.dev.dependencies]
-mypy = ">=1"
+mypy = ">=1.17"
 singer-sdk = {extras = ["testing"], version = "*"}
-tox = "^3.24.4"
-ruff = "^0.6.7"
+tox = "~=4.30.2"
+ruff = "~=0.13.2"
 
 [tool.isort]
 profile = "black"
@@ -36,7 +36,7 @@ src_paths = "tap_snowflake"
 [tool.ruff]
 line-length = 88
 src = ["target_snowflake"]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 ignore = [
