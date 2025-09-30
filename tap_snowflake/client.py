@@ -6,7 +6,6 @@ This includes SnowflakeStream and SnowflakeConnector.
 from __future__ import annotations
 
 import contextlib
-import datetime
 import sys
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -15,46 +14,28 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-import singer_sdk.helpers._typing
 import sqlalchemy
+import sqlalchemy.engine
+import sqlalchemy.engine.reflection
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
-from singer_sdk import SQLConnector, SQLStream, metrics
+from singer_sdk import metrics
 from singer_sdk.exceptions import ConfigValidationError
+from singer_sdk.sql import SQLConnector, SQLStream
+from singer_sdk.sql.connector import SQLToJSONSchema
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Sequence
 
     from singer_sdk.helpers import types
     from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
+    from singer_sdk.sql.connector import FullyQualifiedName
     from sqlalchemy.engine import Connection, CursorResult
     from sqlalchemy.sql import Executable
     from sqlalchemy.sql.elements import TextClause
-
-unpatched_conform = singer_sdk.helpers._typing._conform_primitive_property
-
-
-def patched_conform(
-    elem: Any,
-    property_schema: dict,
-) -> Any:
-    """Overrides Singer SDK type conformance to prevent dates turning into datetimes.
-
-    Converts a primitive (i.e. not object or array) to a json compatible type.
-
-    Returns:
-        The appropriate json compatible type.
-    """
-    if isinstance(elem, datetime.date):
-        return elem.isoformat()
-
-    return unpatched_conform(elem=elem, property_schema=property_schema)
-
-
-singer_sdk.helpers._typing._conform_primitive_property = patched_conform
 
 
 class SnowflakeAuthMethod(Enum):
@@ -95,8 +76,20 @@ class TableProfile:
     size_in_mb: int | None
 
 
+class SnowflakeToJSONSchema(SQLToJSONSchema):
+    """Snowflake to JSON schema.
+
+    We can't take advantage of this instance to map the type of VARIANT, ARRAY, and
+    OBJECT columns because snowflake-sqlalchemy returns JSON strings:
+
+    https://github.com/snowflakedb/snowflake-sqlalchemy/blob/31062877ae013e0fda3194142055b9aea58acdfc/README.md#variant-array-and-object-support
+    """
+
+
 class SnowflakeConnector(SQLConnector):
     """Connects to the Snowflake SQL source."""
+
+    sql_to_jsonschema_converter = SnowflakeToJSONSchema
 
     def get_private_key(self) -> bytes:
         """Get private key from the right location."""
@@ -207,8 +200,18 @@ class SnowflakeConnector(SQLConnector):
         return engine
 
     # overridden to filter out the information_schema from catalog discovery
-    def discover_catalog_entries(self) -> list[dict]:
+    def discover_catalog_entries(
+        self,
+        *,
+        exclude_schemas: Sequence[str] = (),
+        reflect_indices: bool = True,
+    ) -> list[dict]:
         """Return a list of catalog entries from discovery.
+
+        Args:
+            exclude_schemas: A list of schema names to exclude from discovery.
+            reflect_indices: Whether to reflect indices to detect potential primary
+                keys.
 
         Returns:
             The discovered catalog entries as a list.
@@ -227,22 +230,43 @@ class SnowflakeConnector(SQLConnector):
         table_schema_names = [
             x for x in schema_names if x in table_schemas
         ] or schema_names
+
+        object_kinds = (
+            (sqlalchemy.engine.reflection.ObjectKind.TABLE, False),
+            (sqlalchemy.engine.reflection.ObjectKind.ANY_VIEW, True),
+        )
         for schema_name in table_schema_names:
             # Iterate through each table and view of relevant schemas
-            for table_name, is_view in self.get_object_names(
-                engine,
-                inspected,
-                schema_name,
-            ):
-                if not_tables or (f"{schema_name}.{table_name}" in tables):
-                    catalog_entry = self.discover_catalog_entry(
+            if schema_name in exclude_schemas:
+                continue
+
+            primary_keys = inspected.get_multi_pk_constraint(schema=schema_name)
+
+            if reflect_indices:
+                indices = inspected.get_multi_indexes(schema=schema_name)
+            else:
+                indices = {}
+
+            for object_kind, is_view in object_kinds:
+                columns = inspected.get_multi_columns(
+                    schema=schema_name,
+                    kind=object_kind,
+                )
+
+                result.extend(
+                    self.discover_catalog_entry(
                         engine,
                         inspected,
                         schema_name,
-                        table_name,
+                        table,
                         is_view,
-                    )
-                    result.append(catalog_entry.to_dict())
+                        reflected_columns=columns[schema, table],
+                        reflected_pk=primary_keys.get((schema, table)),
+                        reflected_indices=indices.get((schema, table), []),
+                    ).to_dict()
+                    for schema, table in columns
+                    if not_tables or (f"{schema_name}.{table}" in tables)
+                )
 
         return result
 
@@ -416,7 +440,7 @@ class SnowflakeStream(SQLStream):
         sync_id: str,
         prefix: str,
         objects: list[str],
-        table_name: str,
+        table_name: FullyQualifiedName,
     ) -> tuple[TextClause, dict]:
         """Get FULL_TABLE copy statement and key bindings."""
         statement = [f"copy into '@~/tap-snowflake/{sync_id}/{prefix}' from "]
@@ -442,7 +466,7 @@ class SnowflakeStream(SQLStream):
         sync_id: str,
         prefix: str,
         objects: list[str],
-        table_name: str,
+        table_name: FullyQualifiedName,
         replication_key_value,
     ) -> tuple[TextClause, dict]:
         """Get INCREMENTAL copy statement and key bindings."""
