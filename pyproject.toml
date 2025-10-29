@@ -15,9 +15,9 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4"
+python = ">=3.10"
 cryptography = ">=40"
-singer-sdk = "~=0.49.1"
+singer-sdk = "~=0.52.4"
 snowflake-sqlalchemy = "1.7.7"
 snowflake-connector-python = { version = "~=3.17.4", extras = ["secure-local-storage"] }
 sqlalchemy = "~=2.0.43"
@@ -26,7 +26,7 @@ sqlalchemy = "~=2.0.43"
 mypy = ">=1.17"
 singer-sdk = {extras = ["testing"], version = "*"}
 tox = "~=4.30.2"
-ruff = "~=0.13.2"
+ruff = "~=0.14.0"
 
 [tool.isort]
 profile = "black"
