@@ -220,16 +220,17 @@ class SnowflakeConnector(SQLConnector):
         tables = [t.lower() for t in self.config.get("tables", [])]
         engine = self.create_engine()
         inspected = sqlalchemy.inspect(engine)
-        schema_names = [
-            self._dialect.identifier_preparer.quote(schema_name)
-            for schema_name in self.get_schema_names(engine, inspected)
-            if schema_name.lower() != "information_schema"
-        ]
-        not_tables = not tables
-        table_schemas = {} if not_tables else {x.split(".")[0] for x in tables}
-        table_schema_names = [
-            x for x in schema_names if x in table_schemas
-        ] or schema_names
+        table_schema_names: list[str] = list(
+            ()  # No tables specified
+            if not tables
+            else {x.split(".")[0] for x in tables}  # Get the schema from each table
+        )
+        if not table_schema_names:
+            table_schema_names = [
+                self._dialect.identifier_preparer.quote(schema_name)
+                for schema_name in self.get_schema_names(engine, inspected)
+                if schema_name.lower() != "information_schema"
+            ]
 
         object_kinds = (
             (sqlalchemy.engine.reflection.ObjectKind.TABLE, False),
@@ -265,7 +266,7 @@ class SnowflakeConnector(SQLConnector):
                         reflected_indices=indices.get((schema, table), []),
                     ).to_dict()
                     for schema, table in columns
-                    if not_tables or (f"{schema_name}.{table}" in tables)
+                    if not tables or (f"{schema_name}.{table}" in tables)
                 )
 
         return result
