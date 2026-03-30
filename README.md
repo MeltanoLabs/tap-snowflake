@@ -112,8 +112,8 @@ tap-snowflake --config CONFIG --discover > ./catalog.json
 ### Initialize your Development Environment
 
 ```bash
-pipx install poetry
-poetry install
+curl -LsSf https://astral.sh/uv/install.sh | sh # https://docs.astral.sh/uv/getting-started/installation/ 
+uv sync
 ```
 
 ### Create and Run Tests
@@ -122,13 +122,13 @@ Create tests within the `tap_snowflake/tests` subfolder and
 then run:
 
 ```bash
-poetry run pytest
+uv run pytest
 ```
 
-You can also test the `tap-snowflake` CLI interface directly using `poetry run`:
+You can also test the `tap-snowflake` CLI interface directly using `uv run`:
 
 ```bash
-poetry run tap-snowflake --help
+uv run tap-snowflake --help
 ```
 
 ### Testing with [Meltano](https://www.meltano.com)
