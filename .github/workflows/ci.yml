@@ -1,0 +1,55 @@
+### A CI workflow template that runs linting and python testing
+### TODO: Modify as needed or as desired.
+
+name: Test tap-snowflake
+
+on: [push]
+
+permissions: {}
+
+jobs:
+  linting:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+    - name: Run lint command from tox.ini
+      run: |
+        uvx --managed-python --with tox-uv tox -e lint
+
+  pytest:
+    runs-on: ubuntu-latest
+    name: Test
+    env:
+      TAP_SNOWFLAKE_ACCOUNT: ${{secrets.TAP_SNOWFLAKE_ACCOUNT}}
+      TAP_SNOWFLAKE_DATABASE: ${{secrets.TAP_SNOWFLAKE_DATABASE}}
+      TAP_SNOWFLAKE_PRIVATE_KEY: ${{secrets.TAP_SNOWFLAKE_PRIVATE_KEY}}
+      TAP_SNOWFLAKE_ROLE: ${{secrets.TAP_SNOWFLAKE_ROLE}}
+      TAP_SNOWFLAKE_USER: ${{secrets.TAP_SNOWFLAKE_USER}}
+      TAP_SNOWFLAKE_WAREHOUSE: ${{secrets.TAP_SNOWFLAKE_WAREHOUSE}}
+    strategy:
+      max-parallel: 1
+      matrix:
+        python-version:
+        - "3.10"
+        - "3.14"
+
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        uv sync
+    - name: Test with pytest
+      run: |
+        uv run pytest --capture=no

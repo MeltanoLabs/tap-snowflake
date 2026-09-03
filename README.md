@@ -112,7 +112,7 @@ tap-snowflake --config CONFIG --discover > ./catalog.json
 ### Initialize your Development Environment
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh # https://docs.astral.sh/uv/getting-started/installation/ 
+curl -LsSf https://astral.sh/uv/install.sh | sh # https://docs.astral.sh/uv/getting-started/installation/
 uv sync
 ```
 

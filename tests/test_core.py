@@ -1,18 +1,14 @@
 """Tests standard tap features using the built-in SDK tests library."""
 
-import os
+import json
+from pathlib import Path
 
+from singer_sdk.singerlib import Catalog
 from singer_sdk.testing import SuiteConfig, get_tap_test_class
 
 from tap_snowflake.tap import TapSnowflake
 
 SAMPLE_CONFIG = {
-    "user": os.environ["SF_USER"],
-    "password": os.environ["SF_PASSWORD"],
-    "account": os.environ["SF_ACCOUNT"],
-    "database": os.getenv("SF_DATABASE"),
-    "warehouse": os.getenv("SF_WAREHOUSE"),
-    "role": os.getenv("SF_ROLE"),
     "tables": [
         "tpch_sf1.customer",
         "tpch_sf1.lineitem",
@@ -25,6 +21,8 @@ SAMPLE_CONFIG = {
     ],
 }
 
+CATALOG = Catalog.from_dict(json.loads(Path("tests/catalog.json").read_text()))
+
 
 TestTapSnowflake = get_tap_test_class(
     tap_class=TapSnowflake,
@@ -33,5 +31,5 @@ TestTapSnowflake = get_tap_test_class(
         max_records_limit=100,
         ignore_no_records_for_streams=["tpch_sf1-lineitem"],
     ),
-    catalog="tests/catalog.json",
+    catalog=CATALOG,
 )

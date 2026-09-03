@@ -1,7 +1,7 @@
 """Snowflake tap class."""
 
-from singer_sdk import SQLTap
 from singer_sdk import typing as th  # JSON schema typing helpers
+from singer_sdk.sql import SQLTap
 
 from tap_snowflake.client import SnowflakeStream
 

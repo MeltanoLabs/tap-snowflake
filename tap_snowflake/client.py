@@ -200,7 +200,7 @@ class SnowflakeConnector(SQLConnector):
                 with self._redirect_stdout_to_stderr():
                     return original_connect(*args, **kwargs)
 
-            engine.connect = wrapped_connect  # type: ignore[method-assign]
+            engine.connect = wrapped_connect  # type: ignore[method-assign]  # ty: ignore[invalid-assignment]
 
         return engine
 
@@ -394,7 +394,7 @@ class SnowflakeStream(SQLStream):
         # New: Collect the max value for the replication column.
         max_replication_key_value = None
         if self.replication_key:
-            table_profile: TableProfile = self.connector.get_table_profile(  # type: ignore[attr-defined]
+            table_profile: TableProfile = self.connector.get_table_profile(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                 full_table_name=self.fully_qualified_name,
                 stats={ProfileStats.COLUMN_MAX_VALUE},
                 profile_columns=[self.replication_key],
@@ -416,7 +416,7 @@ class SnowflakeStream(SQLStream):
             self._increment_stream_state(
                 latest_record={
                     self.replication_key: max_replication_key_value,  # type: ignore[dict-item]
-                },
+                },  # ty: ignore[invalid-argument-type]
                 context=context,
             )
         self._write_state_message()
@@ -559,9 +559,9 @@ class SnowflakeStream(SQLStream):
                 prefix=prefix,
                 context=context,
             )
-            self.connector.execute(copy_statement, **kwargs).all()  # type: ignore[attr-defined]
+            self.connector.execute(copy_statement, **kwargs).all()  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
             # list available files
-            results = self.connector.execute(  # type: ignore[attr-defined]
+            results = self.connector.execute(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                 text(f"list '@~/tap-snowflake/{sync_id}/'"),
             ).all()
             # download available files
@@ -570,13 +570,13 @@ class SnowflakeStream(SQLStream):
             for result in results:
                 stage_path = result[0]
                 file_name = Path(stage_path).name
-                self.connector.execute(  # type: ignore[attr-defined]
+                self.connector.execute(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                     text(f"get '@~/{stage_path}' '{root}/{sync_id}'"),
                 )
                 files.append(f"{root}/{sync_id}/{file_name}")
         finally:
             # remove staged files
-            self.connector.execute(text(f"remove '@~/tap-snowflake/{sync_id}/'"))  # type: ignore[attr-defined]
+            self.connector.execute(text(f"remove '@~/tap-snowflake/{sync_id}/'"))  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         yield (batch_config.encoding, files)
 
     # Get records from stream
@@ -621,5 +621,5 @@ class SnowflakeStream(SQLStream):
         if self.ABORT_AT_RECORD_COUNT is not None:
             query = query.limit(self.ABORT_AT_RECORD_COUNT)
 
-        for record in self.connector.execute(query).mappings():  # type: ignore[attr-defined]
+        for record in self.connector.execute(query).mappings():  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
             yield dict(record)
