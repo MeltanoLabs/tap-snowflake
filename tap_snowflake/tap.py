@@ -110,6 +110,62 @@ class TapSnowflake(SQLTap):
                 "configuration parameter."
             ),
         ),
+        # Declared explicitly (rather than relying on the SDK's built-in
+        # BATCH_CONFIG, merged in automatically for the BATCH capability) so that
+        # `encoding.format` also allows `arrow`, which this tap supports in
+        # addition to the SDK's default `jsonl`/`parquet`. The SDK only merges in
+        # its own version of a property that isn't already declared here.
+        th.Property(
+            "batch_config",
+            title="Batch Configuration",
+            description="Configuration for BATCH message capabilities.",
+            wrapped=th.ObjectType(
+                th.Property(
+                    "encoding",
+                    title="Batch Encoding Configuration",
+                    description=(
+                        "Specifies the format and compression of the batch files."
+                    ),
+                    wrapped=th.ObjectType(
+                        th.Property(
+                            "format",
+                            th.StringType,
+                            allowed_values=["jsonl", "parquet", "arrow"],
+                            title="Batch Encoding Format",
+                            description="Format to use for batch files.",
+                        ),
+                        th.Property(
+                            "compression",
+                            th.StringType,
+                            allowed_values=["gzip", "none"],
+                            title="Batch Compression Format",
+                            description="Compression format to use for batch files.",
+                        ),
+                    ),
+                ),
+                th.Property(
+                    "storage",
+                    title="Batch Storage Configuration",
+                    description=(
+                        "Defines the storage layer to use when writing batch files."
+                    ),
+                    wrapped=th.ObjectType(
+                        th.Property(
+                            "root",
+                            th.StringType,
+                            title="Batch Storage Root",
+                            description="Root path to use when writing batch files.",
+                        ),
+                        th.Property(
+                            "prefix",
+                            th.StringType,
+                            title="Batch Storage Prefix",
+                            description="Prefix to use when writing batch files.",
+                        ),
+                    ),
+                ),
+            ),
+        ),
     ).to_dict()
     default_stream_class = SnowflakeStream
 
