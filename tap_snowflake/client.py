@@ -22,21 +22,25 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from singer_sdk import metrics
 from singer_sdk.exceptions import ConfigValidationError
+from singer_sdk.helpers._batch import BaseBatchFileEncoding
 from singer_sdk.sql import SQLConnector, SQLStream
 from singer_sdk.sql.connector import SQLToJSONSchema
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
+from tap_snowflake.batch import SnowflakeArrowBatchWriter
+
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
     from singer_sdk.helpers import types
-    from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
+    from singer_sdk.helpers._batch import BatchConfig
     from singer_sdk.sql.connector import FullyQualifiedName
     from sqlalchemy.engine import Connection, CursorResult
     from sqlalchemy.sql import Executable
     from sqlalchemy.sql.elements import TextClause
+    from sqlalchemy.sql.selectable import Select
 
 
 class SnowflakeAuthMethod(Enum):
@@ -439,7 +443,10 @@ class SnowflakeStream(SQLStream):
         if context:
             msg = f"Stream '{self.name}' does not support partitioning."
             raise NotImplementedError(msg)
-        yield from self.get_batches_from_internal_user_stage(batch_config, context)
+        if batch_config.encoding.format == "arrow":
+            yield from self.get_batches_via_arrow_fetch(batch_config, context)
+        else:
+            yield from self.get_batches_from_internal_user_stage(batch_config, context)
 
     def _get_full_table_copy_statement(
         self,
@@ -577,7 +584,62 @@ class SnowflakeStream(SQLStream):
         finally:
             # remove staged files
             self.connector.execute(text(f"remove '@~/tap-snowflake/{sync_id}/'"))  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
-        yield (batch_config.encoding, files)
+        yield (BaseBatchFileEncoding(format="jsonl", compression="gzip"), files)
+
+    def get_batches_via_arrow_fetch(
+        self,
+        batch_config: BatchConfig,
+        context: types.Context | None = None,
+    ) -> Iterable[tuple[BaseBatchFileEncoding, list[str]]]:
+        """Get Arrow IPC batches by fetching query results natively as Arrow.
+
+        Uses snowflake-connector-python's native Arrow result format
+        (``fetch_arrow_batches``) via the raw DBAPI cursor underlying the
+        SQLAlchemy connection, so results stream directly to Arrow with no
+        intermediate stage unload/download or JSON round-trip.
+        """
+        query = self._build_select(context)
+        writer = SnowflakeArrowBatchWriter(
+            stream_name=self.name,
+            storage=batch_config.storage,
+            batch_size=batch_config.batch_size,
+        )
+        result = self.connector.execute(query)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+        arrow_batches = result.cursor.fetch_arrow_batches(
+            force_microsecond_precision=True,
+        )
+        for table in arrow_batches:
+            writer.write(table)
+        writer.flush()
+        yield (batch_config.encoding, writer.files)
+
+    def _build_select(self, context: types.Context | None = None) -> Select:
+        """Build the SELECT statement shared by RECORD and Arrow-BATCH sync paths.
+
+        Args:
+            context: If partition context is provided, will read specifically from this
+                data slice.
+
+        Returns:
+            A SQLAlchemy Select statement for the stream's selected columns,
+            filtered and ordered by the replication key when one is set.
+        """
+        selected_column_names = self.get_selected_schema()["properties"].keys()
+        table = self.connector.get_table(
+            full_table_name=self.fully_qualified_name,
+            column_names=selected_column_names,
+        )
+        query = table.select()
+
+        if self.replication_key:
+            replication_key_col = table.columns[self.replication_key]
+            query = query.order_by(replication_key_col)
+
+            start_val = self.get_starting_replication_key_value(context)
+            if start_val:
+                query = query.where(replication_key_col >= start_val)
+
+        return query
 
     # Get records from stream
     # Overridden to use native objects under `if start_val:`
@@ -603,20 +665,7 @@ class SnowflakeStream(SQLStream):
             msg = f"Stream '{self.name}' does not support partitioning."
             raise NotImplementedError(msg)
 
-        selected_column_names = self.get_selected_schema()["properties"].keys()
-        table = self.connector.get_table(
-            full_table_name=self.fully_qualified_name,
-            column_names=selected_column_names,
-        )
-        query = table.select()
-
-        if self.replication_key:
-            replication_key_col = table.columns[self.replication_key]
-            query = query.order_by(replication_key_col)
-
-            start_val = self.get_starting_replication_key_value(context)
-            if start_val:
-                query = query.where(replication_key_col >= start_val)
+        query = self._build_select(context)
 
         if self.ABORT_AT_RECORD_COUNT is not None:
             query = query.limit(self.ABORT_AT_RECORD_COUNT)

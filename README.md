@@ -95,6 +95,39 @@ config:
 
 **Note:** This variant of `tap-snowflake` does not yet support the `INCREMENTAL` replication strategy in `BATCH` mode. Follow [here](https://github.com/meltano/sdk/issues/976#issuecomment-1257848119) for updates.
 
+#### `arrow` encoding
+
+In addition to `jsonl`, `encoding.format` also accepts `arrow`:
+
+```json
+{
+  "batch_config": {
+    "encoding": {
+      "format": "arrow"
+    },
+    "storage": {
+      "root": "file:///tmp/tap-snowflake-batches"
+    },
+    "batch_size": 500000
+  }
+}
+```
+
+| Replication method | With `batch_config` set                |
+| ------------------- | --------------------------------------- |
+| `FULL_TABLE`         | `BATCH` messages                        |
+| `INCREMENTAL`        | `BATCH` messages                        |
+
+Unlike `jsonl`, which unloads rows to the Snowflake-managed internal user
+stage via `COPY INTO` and then downloads them (`LIST`/`GET`), `arrow` reads
+query results directly using `snowflake-connector-python`'s native Arrow
+result format (Snowflake's wire format is already Arrow) -- no stage,
+intermediate JSON encoding, or extra download round trip. `batch_size`
+controls how many rows accumulate before a new Arrow IPC file is flushed
+(default `10000`, matching the SDK's default). As with `jsonl`, batch files
+are written to local storage only and are not cleaned up by the tap -- the
+consumer owns their lifecycle.
+
 ## Usage
 
 You can easily run `tap-snowflake` by itself or in a pipeline using [Meltano](https://meltano.com/).
