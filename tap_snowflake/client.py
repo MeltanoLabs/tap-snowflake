@@ -5,6 +5,7 @@ This includes SnowflakeStream and SnowflakeConnector.
 
 from __future__ import annotations
 
+import base64
 import contextlib
 import sys
 from dataclasses import dataclass
@@ -103,6 +104,10 @@ class SnowflakeConnector(SQLConnector):
                 key_content = key.read()
         else:
             key_content = self.config["private_key"].encode()
+            # Allow the key to be base64-encoded, so it can fit in a single-line
+            # environment variable.
+            if not key_content.strip().startswith(b"-----BEGIN"):
+                key_content = base64.b64decode(key_content)
 
         p_key = serialization.load_pem_private_key(
             key_content,
