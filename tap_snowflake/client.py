@@ -393,6 +393,9 @@ class SnowflakeStream(SQLStream):
             batch_config: The batch configuration.
             context: Stream partition or context dictionary.
         """
+        if not self.selected:
+            return
+
         self._write_starting_replication_value(context)
 
         # New: Collect the max value for the replication column.
@@ -619,13 +622,8 @@ class SnowflakeStream(SQLStream):
     def _build_select(self, context: types.Context | None = None) -> Select:
         """Build the SELECT statement shared by RECORD and Arrow-BATCH sync paths.
 
-        Snowflake stores unquoted identifiers in uppercase and returns result
-        columns in that native casing, which usually doesn't match the
-        (typically lowercase) Singer schema property names. Every selected
-        column is therefore explicitly labeled with its schema property name,
-        so records and Arrow-BATCH files always carry the casing downstream
-        consumers expect from the SCHEMA message, regardless of how the
-        column is actually cased in Snowflake.
+        Columns are labeled with their schema property name since Snowflake
+        returns unquoted identifiers in uppercase, which may not match it.
 
         Args:
             context: If partition context is provided, will read specifically from this
@@ -645,6 +643,7 @@ class SnowflakeStream(SQLStream):
             *[
                 columns_by_casefold[name.casefold()].label(name)
                 for name in selected_column_names
+                if name.casefold() in columns_by_casefold
             ],
         )
 

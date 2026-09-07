@@ -25,11 +25,7 @@ def _fake_table(
     table_name: str,
     schema_name: str,
 ) -> sa.Table:
-    """Build a Table whose columns use Snowflake's native unquoted-identifier casing.
-
-    This simulates what `SQLConnector.get_table` returns for a real Snowflake table,
-    independent of how the Singer schema casts the matching property names.
-    """
+    """Build a Table mimicking Snowflake's uppercase unquoted-identifier casing."""
     meta = sa.MetaData()
     columns = [sa.Column(name.upper(), sa.Integer()) for name in properties]
     return sa.Table(table_name, meta, *columns, schema=schema_name)
