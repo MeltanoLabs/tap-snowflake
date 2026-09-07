@@ -11,6 +11,8 @@ plugins:
     - state
     - catalog
     - discover
+    - batch
+    - structured-logging
     settings:
     - name: user
     - name: password

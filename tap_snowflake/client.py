@@ -393,6 +393,9 @@ class SnowflakeStream(SQLStream):
             batch_config: The batch configuration.
             context: Stream partition or context dictionary.
         """
+        if not self.selected:
+            return
+
         self._write_starting_replication_value(context)
 
         # New: Collect the max value for the replication column.
@@ -598,6 +601,9 @@ class SnowflakeStream(SQLStream):
         SQLAlchemy connection, so results stream directly to Arrow with no
         intermediate stage unload/download or JSON round-trip.
         """
+        if not self.selected:
+            return
+
         query = self._build_select(context)
         writer = SnowflakeArrowBatchWriter(
             stream_name=self.name,
@@ -616,6 +622,9 @@ class SnowflakeStream(SQLStream):
     def _build_select(self, context: types.Context | None = None) -> Select:
         """Build the SELECT statement shared by RECORD and Arrow-BATCH sync paths.
 
+        Columns are labeled with their schema property name since Snowflake
+        returns unquoted identifiers in uppercase, which may not match it.
+
         Args:
             context: If partition context is provided, will read specifically from this
                 data slice.
@@ -629,10 +638,17 @@ class SnowflakeStream(SQLStream):
             full_table_name=self.fully_qualified_name,
             column_names=selected_column_names,
         )
-        query = table.select()
+        columns_by_casefold = {col.name.casefold(): col for col in table.columns}
+        query = sqlalchemy.select(
+            *[
+                columns_by_casefold[name.casefold()].label(name)
+                for name in selected_column_names
+                if name.casefold() in columns_by_casefold
+            ],
+        )
 
         if self.replication_key:
-            replication_key_col = table.columns[self.replication_key]
+            replication_key_col = columns_by_casefold[self.replication_key.casefold()]
             query = query.order_by(replication_key_col)
 
             start_val = self.get_starting_replication_key_value(context)
@@ -664,6 +680,9 @@ class SnowflakeStream(SQLStream):
         if context:
             msg = f"Stream '{self.name}' does not support partitioning."
             raise NotImplementedError(msg)
+
+        if not self.selected:
+            return
 
         query = self._build_select(context)
 
