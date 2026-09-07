@@ -19,7 +19,9 @@ SAMPLE_CONFIG = {
 }
 
 
-def _fake_table(properties: list[str], *, table_name: str, schema_name: str) -> sa.Table:
+def _fake_table(
+    properties: list[str], *, table_name: str, schema_name: str
+) -> sa.Table:
     """Build a SQLAlchemy Table whose columns use Snowflake's native (uppercase)
     unquoted-identifier casing, to simulate what `SQLConnector.get_table` returns
     for a real Snowflake table -- independent of how the Singer schema casts the
