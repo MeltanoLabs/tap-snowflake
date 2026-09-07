@@ -164,6 +164,13 @@ class TapSnowflake(SQLTap):
                         ),
                     ),
                 ),
+                th.Property(
+                    "batch_size",
+                    th.IntegerType,
+                    title="Batch Size",
+                    description="Maximum number of records in each BATCH file",
+                    default=100_000,  # Up from SDK's 10,000
+                ),
             ),
         ),
     ).to_dict()
