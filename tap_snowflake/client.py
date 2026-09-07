@@ -598,6 +598,9 @@ class SnowflakeStream(SQLStream):
         SQLAlchemy connection, so results stream directly to Arrow with no
         intermediate stage unload/download or JSON round-trip.
         """
+        if not self.selected:
+            return
+
         query = self._build_select(context)
         writer = SnowflakeArrowBatchWriter(
             stream_name=self.name,
@@ -678,6 +681,9 @@ class SnowflakeStream(SQLStream):
         if context:
             msg = f"Stream '{self.name}' does not support partitioning."
             raise NotImplementedError(msg)
+
+        if not self.selected:
+            return
 
         query = self._build_select(context)
 

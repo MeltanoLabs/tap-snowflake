@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -11,6 +12,8 @@ from pyarrow import ipc
 
 if TYPE_CHECKING:
     from singer_sdk.helpers._batch import StorageTarget
+
+logger = logging.getLogger(__name__)
 
 
 class SnowflakeArrowBatchWriter:
@@ -75,6 +78,7 @@ class SnowflakeArrowBatchWriter:
 
         table = pa.concat_tables(self._buffered)
         filename = f"{self.stream_name}-{uuid4().hex}.arrow"
+        logger.info("Writing BATCH file to %s", self._local_root / filename)
         with ipc.new_file(self._local_root / filename, table.schema) as writer:
             writer.write_table(table)
 
