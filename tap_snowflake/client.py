@@ -624,6 +624,10 @@ class SnowflakeStream(SQLStream):
 
         Columns are labeled with their schema property name since Snowflake
         returns unquoted identifiers in uppercase, which may not match it.
+        The label is force-quoted (``quoted_name(name, quote=True)``): a
+        plain lowercase label compiles unquoted, and Snowflake folds an
+        unquoted alias to uppercase in the actual result set regardless,
+        silently undoing the fix.
 
         Args:
             context: If partition context is provided, will read specifically from this
@@ -641,7 +645,9 @@ class SnowflakeStream(SQLStream):
         columns_by_casefold = {col.name.casefold(): col for col in table.columns}
         query = sqlalchemy.select(
             *[
-                columns_by_casefold[name.casefold()].label(name)
+                columns_by_casefold[name.casefold()].label(
+                    sqlalchemy.sql.quoted_name(name, quote=True),
+                )
                 for name in selected_column_names
                 if name.casefold() in columns_by_casefold
             ],
