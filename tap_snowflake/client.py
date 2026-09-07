@@ -616,6 +616,14 @@ class SnowflakeStream(SQLStream):
     def _build_select(self, context: types.Context | None = None) -> Select:
         """Build the SELECT statement shared by RECORD and Arrow-BATCH sync paths.
 
+        Snowflake stores unquoted identifiers in uppercase and returns result
+        columns in that native casing, which usually doesn't match the
+        (typically lowercase) Singer schema property names. Every selected
+        column is therefore explicitly labeled with its schema property name,
+        so records and Arrow-BATCH files always carry the casing downstream
+        consumers expect from the SCHEMA message, regardless of how the
+        column is actually cased in Snowflake.
+
         Args:
             context: If partition context is provided, will read specifically from this
                 data slice.
@@ -624,15 +632,21 @@ class SnowflakeStream(SQLStream):
             A SQLAlchemy Select statement for the stream's selected columns,
             filtered and ordered by the replication key when one is set.
         """
-        selected_column_names = self.get_selected_schema()["properties"].keys()
+        selected_column_names = list(self.get_selected_schema()["properties"].keys())
         table = self.connector.get_table(
             full_table_name=self.fully_qualified_name,
             column_names=selected_column_names,
         )
-        query = table.select()
+        columns_by_casefold = {col.name.casefold(): col for col in table.columns}
+        query = sqlalchemy.select(
+            *[
+                columns_by_casefold[name.casefold()].label(name)
+                for name in selected_column_names
+            ],
+        )
 
         if self.replication_key:
-            replication_key_col = table.columns[self.replication_key]
+            replication_key_col = columns_by_casefold[self.replication_key.casefold()]
             query = query.order_by(replication_key_col)
 
             start_val = self.get_starting_replication_key_value(context)
