@@ -8,6 +8,7 @@ from unittest import mock
 
 import sqlalchemy as sa
 from singer_sdk.singerlib import Catalog
+from snowflake.sqlalchemy import snowdialect
 
 from tap_snowflake.tap import TapSnowflake
 
@@ -64,3 +65,25 @@ def test_build_select_orders_by_replication_key_despite_casing_mismatch():
     assert [col.name for col in query.selected_columns] == properties
     order_by_names = [col.name for col in query._order_by_clauses]
     assert order_by_names == ["S_SUPPKEY"]
+
+
+def test_build_select_quotes_aliases_so_snowflake_preserves_casing():
+    """A bare (unquoted) lowercase alias is folded to uppercase by Snowflake's
+    query engine when the SQL actually runs, silently undoing the schema-casing
+    fix regardless of what SQLAlchemy's own (dialect-normalized) column/label
+    names look like Python-side. Aliases must render quoted, e.g. ``AS "rank"``,
+    for Snowflake to echo the column back with the exact schema-property casing.
+    """
+    catalog = Catalog.from_dict(json.loads(Path("tests/catalog.json").read_text()))
+    tap = TapSnowflake(config=SAMPLE_CONFIG, catalog=catalog, validate_config=False)
+    stream = tap.streams["tpch_sf1-customer"]
+
+    properties = list(stream.get_selected_schema()["properties"].keys())
+    fake_table = _fake_table(properties, table_name="CUSTOMER", schema_name="TPCH_SF1")
+
+    with mock.patch.object(stream.connector, "get_table", return_value=fake_table):
+        query = stream._build_select()
+
+    compiled = str(query.compile(dialect=snowdialect.SnowflakeDialect()))
+    for name in properties:
+        assert f'AS "{name}"' in compiled, compiled
