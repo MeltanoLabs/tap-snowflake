@@ -68,7 +68,9 @@ def test_build_select_orders_by_replication_key_despite_casing_mismatch():
 
 
 def test_build_select_quotes_aliases_so_snowflake_preserves_casing():
-    """A bare (unquoted) lowercase alias is folded to uppercase by Snowflake's
+    """Assert that SELECT aliases are quoted so Snowflake preserves casing.
+
+    A bare (unquoted) lowercase alias is folded to uppercase by Snowflake's
     query engine when the SQL actually runs, silently undoing the schema-casing
     fix regardless of what SQLAlchemy's own (dialect-normalized) column/label
     names look like Python-side. Aliases must render quoted, e.g. ``AS "rank"``,
