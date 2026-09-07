@@ -153,6 +153,7 @@ class TapSnowflake(SQLTap):
                         th.Property(
                             "root",
                             th.StringType,
+                            default="file://.batch_files",  # Replace with "file://" for SDK 0.55+ to use a temp directory  # ruff: ignore[E501]
                             title="Batch Storage Root",
                             description="Root path to use when writing batch files.",
                         ),
