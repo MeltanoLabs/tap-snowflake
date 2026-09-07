@@ -1,3 +1,15 @@
+ci:
+  autofix_commit_msg: |
+    chore: auto fixes from pre-commit.ci hooks
+
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_commit_msg: "chore: pre-commit autoupdate"
+  autoupdate_schedule: quarterly
+  skip:
+    - uv-audit
+    - uv-lock
+
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v6.0.0
@@ -12,5 +24,12 @@ repos:
   rev: v0.16.6
   hooks:
   - id: ruff-check
-    args: [--fix, --exit-non-zero-on-fix]
+    args: [--fix, --show-fixes, --exit-non-zero-on-fix]
   - id: ruff-format
+
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.12.10
+  hooks:
+  - id: uv-lock
+  - id: uv-sync
+  - id: uv-audit
