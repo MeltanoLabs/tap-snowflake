@@ -624,16 +624,10 @@ class SnowflakeStream(SQLStream):
 
         Columns are labeled with their schema property name since Snowflake
         returns unquoted identifiers in uppercase, which may not match it.
-
-        The label is forced to be quoted (``quoted_name(name, quote=True)``)
-        rather than a plain string. A plain lowercase label like ``"rank"``
-        compiles to an *unquoted* ``AS rank`` -- snowflake-sqlalchemy's
-        identifier preparer only quotes names with upper/mixed case, on the
-        assumption that a bare lowercase identifier is safe to send as-is.
-        That assumption only protects SQLAlchemy's own reflection round-trip;
-        Snowflake's query engine still folds any unquoted alias to uppercase
-        in the actual result set, silently undoing the casing fix. Forcing
-        the quote keeps the alias exactly as-cased in Snowflake's output.
+        The label is force-quoted (``quoted_name(name, quote=True)``): a
+        plain lowercase label compiles unquoted, and Snowflake folds an
+        unquoted alias to uppercase in the actual result set regardless,
+        silently undoing the fix.
 
         Args:
             context: If partition context is provided, will read specifically from this
