@@ -633,7 +633,7 @@ class SnowflakeStream(SQLStream):
             A SQLAlchemy Select statement for the stream's selected columns,
             filtered and ordered by the replication key when one is set.
         """
-        selected_column_names = list(self.get_selected_schema()["properties"].keys())
+        selected_column_names = self.get_selected_schema()["properties"].keys()
         table = self.connector.get_table(
             full_table_name=self.fully_qualified_name,
             column_names=selected_column_names,
