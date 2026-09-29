@@ -22,6 +22,7 @@ dependencies = [
     "snowflake-connector-python[secure-local-storage]~=4.7.3",
     "sqlalchemy~=2.0.52",
     "pyarrow>=25.0.1",
+    "typing-extensions>=4.16.0 ; python_full_version < '3.12'",
 ]
 
 [project.scripts]
