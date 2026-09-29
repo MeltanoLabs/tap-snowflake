@@ -926,6 +926,7 @@ dependencies = [
     { name = "snowflake-connector-python", extra = ["secure-local-storage"] },
     { name = "snowflake-sqlalchemy" },
     { name = "sqlalchemy" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
 ]
 
 [package.dev-dependencies]
@@ -952,6 +953,7 @@ requires-dist = [
     { name = "snowflake-connector-python", extras = ["secure-local-storage"], specifier = "~=4.7.3" },
     { name = "snowflake-sqlalchemy", specifier = "==1.11.1" },
     { name = "sqlalchemy", specifier = "~=2.0.52" },
+    { name = "typing-extensions", marker = "python_full_version < '3.12'", specifier = ">=4.16.0" },
 ]
 
 [package.metadata.requires-dev]
