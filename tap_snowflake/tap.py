@@ -126,6 +126,7 @@ class TapSnowflake(SQLTap):
                     description=(
                         "Specifies the format and compression of the batch files."
                     ),
+                    required=True,
                     wrapped=th.ObjectType(
                         th.Property(
                             "format",
@@ -133,6 +134,7 @@ class TapSnowflake(SQLTap):
                             allowed_values=["jsonl", "parquet", "arrow"],
                             title="Batch Encoding Format",
                             description="Format to use for batch files.",
+                            required=True,
                         ),
                         th.Property(
                             "compression",
@@ -153,7 +155,6 @@ class TapSnowflake(SQLTap):
                         th.Property(
                             "root",
                             th.StringType,
-                            default="file://.batch_files",  # Replace with "file://" for SDK 0.55+ to use a temp directory  # ruff: ignore[E501]
                             title="Batch Storage Root",
                             description="Root path to use when writing batch files.",
                         ),
@@ -170,7 +171,6 @@ class TapSnowflake(SQLTap):
                     th.IntegerType,
                     title="Batch Size",
                     description="Maximum number of records in each BATCH file",
-                    default=100_000,  # Up from SDK's 10,000
                 ),
             ),
         ),

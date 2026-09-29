@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import contextlib
 import sys
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum, auto
 from functools import cached_property
@@ -22,7 +23,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from singer_sdk import metrics
 from singer_sdk.exceptions import ConfigValidationError
-from singer_sdk.helpers._batch import BaseBatchFileEncoding
+from singer_sdk.helpers._batch import BaseBatchFileEncoding, BatchConfig
 from singer_sdk.sql import SQLConnector, SQLStream
 from singer_sdk.sql.connector import SQLToJSONSchema
 from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMENTAL
@@ -31,11 +32,15 @@ from sqlalchemy.sql import text
 
 from tap_snowflake.batch import SnowflakeArrowBatchWriter
 
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    from typing_extensions import override
+
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable, Mapping, Sequence
 
     from singer_sdk.helpers import types
-    from singer_sdk.helpers._batch import BatchConfig
     from singer_sdk.sql.connector import FullyQualifiedName
     from sqlalchemy.engine import Connection, CursorResult
     from sqlalchemy.sql import Executable
@@ -367,6 +372,30 @@ class SnowflakeStream(SQLStream):
     """Stream class for Snowflake streams."""
 
     connector_class = SnowflakeConnector
+
+    @override
+    def get_batch_config(self, config: Mapping) -> BatchConfig | None:
+        """Return the batch config for this stream.
+
+        Args:
+            config: Tap configuration dictionary.
+
+        Returns:
+            Batch config for this stream.
+        """
+        if raw := config.get("batch_config"):
+            storage = deepcopy(raw.get("storage", {}))
+            storage.setdefault(
+                "root",
+                "file://.batch_files",  # Replace with "file://" for SDK 0.55+ to use a temp directory  # ruff: ignore[E501]
+            )
+            batch_config = {
+                "encoding": raw["encoding"],
+                "storage": storage,
+                "batch_size": raw.get("batch_size", 100_000),  # Up from SDK's 10,000
+            }
+            return BatchConfig.from_dict(batch_config)
+        return None
 
     @property
     def is_sorted(self) -> bool:
