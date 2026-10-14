@@ -14,7 +14,7 @@ class TapSnowflake(SQLTap):
     name = "tap-snowflake"
     package_name = "meltanolabs-tap-snowflake"
 
-    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters  # noqa: E501
+    # From https://docs.snowflake.com/en/user-guide/sqlalchemy.html#connection-parameters
     config_jsonschema = th.PropertiesList(
         th.Property(
             "user",
