@@ -383,19 +383,32 @@ class SnowflakeStream(SQLStream):
         Returns:
             Batch config for this stream.
         """
-        if raw := config.get("batch_config"):
-            storage = deepcopy(raw.get("storage", {}))
-            storage.setdefault(
-                "root",
-                "file://.batch_files",  # Replace with "file://" for SDK 0.55+ to use a temp directory  # ruff: ignore[E501]
+        raw = config.get("batch_config")
+        if not raw:
+            return None
+
+        if not raw.get("encoding"):
+            # A partial config (e.g. only default values for `storage` or
+            # `batch_size`) must not enable BATCH. Handled here rather than in the
+            # SDK's `get_batch_config`, which raises on a missing `encoding` in the
+            # SDK versions this tap supports.
+            self.logger.warning(
+                "Ignoring `batch_config` because it has no `encoding`. "
+                "Set `batch_config.encoding.format` to emit BATCH messages.",
             )
-            batch_config = {
-                "encoding": raw["encoding"],
-                "storage": storage,
-                "batch_size": raw.get("batch_size", 100_000),  # Up from SDK's 10,000
-            }
-            return BatchConfig.from_dict(batch_config)
-        return None
+            return None
+
+        storage = deepcopy(raw.get("storage", {}))
+        storage.setdefault(
+            "root",
+            "file://.batch_files",  # Replace with "file://" for SDK 0.55+ to use a temp directory  # ruff: ignore[E501]
+        )
+        batch_config = {
+            "encoding": raw["encoding"],
+            "storage": storage,
+            "batch_size": raw.get("batch_size", 100_000),  # Up from SDK's 10,000
+        }
+        return BatchConfig.from_dict(batch_config)
 
     @property
     def is_sorted(self) -> bool:

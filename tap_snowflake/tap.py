@@ -126,7 +126,6 @@ class TapSnowflake(SQLTap):
                     description=(
                         "Specifies the format and compression of the batch files."
                     ),
-                    required=True,
                     wrapped=th.ObjectType(
                         th.Property(
                             "format",
@@ -134,7 +133,6 @@ class TapSnowflake(SQLTap):
                             allowed_values=["jsonl", "parquet", "arrow"],
                             title="Batch Encoding Format",
                             description="Format to use for batch files.",
-                            required=True,
                         ),
                         th.Property(
                             "compression",
