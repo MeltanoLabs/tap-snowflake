@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import typing as t
 from pathlib import Path
 from unittest import mock
 
@@ -10,7 +12,11 @@ import sqlalchemy as sa
 from singer_sdk.singerlib import Catalog
 from snowflake.sqlalchemy import snowdialect
 
+from tap_snowflake.client import SnowflakeStream
 from tap_snowflake.tap import TapSnowflake
+
+if t.TYPE_CHECKING:
+    import pytest
 
 SAMPLE_CONFIG = {
     "tables": ["tpch_sf1.customer"],
@@ -82,3 +88,48 @@ def test_build_select_quotes_aliases_so_snowflake_preserves_casing():
     compiled = str(query.compile(dialect=snowdialect.SnowflakeDialect()))
     for name in properties:
         assert f'AS "{name}"' in compiled, compiled
+
+
+def _bare_stream() -> SnowflakeStream:
+    """A stream instance without a connection, enough to call `get_batch_config`."""
+    stream = SnowflakeStream.__new__(SnowflakeStream)
+    stream._logger = logging.getLogger("test")
+    return stream
+
+
+def test_batch_config_absent_stays_in_record_mode():
+    assert _bare_stream().get_batch_config({}) is None
+
+
+def test_batch_config_without_encoding_stays_in_record_mode():
+    """Partial values (e.g. from stale Hub defaults) must not enable BATCH."""
+    config = {
+        "batch_config": {
+            "batch_size": 100_000,
+            "storage": {"root": "file://.batch_files"},
+        },
+    }
+    assert _bare_stream().get_batch_config(config) is None
+
+
+def test_batch_config_without_encoding_warns(caplog: pytest.LogCaptureFixture):
+    config = {"batch_config": {"storage": {"root": "file://.batch_files"}}}
+    with caplog.at_level(logging.WARNING):
+        assert _bare_stream().get_batch_config(config) is None
+    assert "Ignoring `batch_config` because it has no `encoding`" in caplog.text
+
+
+def test_batch_config_with_encoding_applies_defaults():
+    batch_config = _bare_stream().get_batch_config(
+        {"batch_config": {"encoding": {"format": "arrow"}}},
+    )
+    assert batch_config is not None
+    assert batch_config.batch_size == 100_000
+    assert batch_config.storage.root == "file://.batch_files"
+
+
+def test_batch_config_schema_has_no_required_properties():
+    """The Hub turns nested `required` into mandatory settings, enabling BATCH."""
+    schema = TapSnowflake.config_jsonschema["properties"]["batch_config"]
+    assert "required" not in schema
+    assert "required" not in schema["properties"]["encoding"]
