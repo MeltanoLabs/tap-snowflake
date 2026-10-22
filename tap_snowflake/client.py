@@ -658,9 +658,9 @@ class SnowflakeStream(SQLStream):
         arrow_batches = result.cursor.fetch_arrow_batches(
             force_microsecond_precision=True,
         )
-        # TODO: Once the SDK supports `Stream.get_record_batches` (proposed in
-        # meltano/sdk branch `feat/arrow-record-batches`), return `arrow_batches`
-        # from it instead. The SDK then rechunks, writes the files and advances
+        # TODO(edgarrmondragon): Return `arrow_batches` from `get_record_batches`.
+        # https://github.com/meltano/sdk/issues/3830
+        # Once the SDK supports that hook, it rechunks, writes the files and advances
         # state, so this loop and `tap_snowflake/batch.py` can be deleted.
         key = self.replication_key
         for table in rechunk(arrow_batches, batch_config.batch_size):
