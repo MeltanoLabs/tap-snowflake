@@ -69,6 +69,7 @@ ignore = [
     "SLF001",
     "EM101",
     "CPY",
+    "FIX002",  # TODOs are allowed; TD002/TD003 require an author and an issue link
 ]
 select = ["ALL"]
 

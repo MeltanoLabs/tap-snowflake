@@ -1,4 +1,4 @@
-"""Unit tests for SnowflakeStream._build_select."""
+"""Unit tests for SnowflakeStream."""
 
 from __future__ import annotations
 
@@ -8,7 +8,9 @@ import typing as t
 from pathlib import Path
 from unittest import mock
 
+import pyarrow as pa
 import sqlalchemy as sa
+from singer_sdk.helpers._batch import BatchConfig
 from singer_sdk.singerlib import Catalog
 from snowflake.sqlalchemy import snowdialect
 
@@ -133,3 +135,48 @@ def test_batch_config_schema_has_no_required_properties():
     schema = TapSnowflake.config_jsonschema["properties"]["batch_config"]
     assert "required" not in schema
     assert "required" not in schema["properties"]["encoding"]
+
+
+def test_arrow_batches_publish_each_file_with_its_own_state(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+):
+    """Each Arrow file gets a BATCH message, then STATE bookmarking its last row."""
+    catalog = Catalog.from_dict(
+        json.loads(Path("tests/catalog-incremental.json").read_text()),
+    )
+    config = {**SAMPLE_CONFIG, "tables": ["tpch_sf1.supplier"]}
+    tap = TapSnowflake(config=config, catalog=catalog, validate_config=False)
+    stream = tap.streams["tpch_sf1-supplier"]
+    batch_config = BatchConfig.from_dict(
+        {
+            "encoding": {"format": "arrow"},
+            "storage": {"root": f"file://{tmp_path}"},
+            "batch_size": 2,
+        },
+    )
+    fetched = [
+        pa.table({"s_suppkey": [1, 2, 3], "s_name": ["a", "b", "c"]}),
+        pa.table({"s_suppkey": [4, 5], "s_name": ["d", "e"]}),
+    ]
+    result = mock.MagicMock()
+    result.cursor.fetch_arrow_batches.return_value = iter(fetched)
+
+    with (
+        mock.patch.object(stream, "_build_select"),
+        mock.patch.object(stream.connector, "execute", return_value=result),
+        mock.patch.object(stream.connector, "get_table_profile") as profile,
+    ):
+        stream._sync_batches(batch_config)
+
+    profile.assert_not_called()
+    messages = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    batches = [i for i, m in enumerate(messages) if m["type"] == "BATCH"]
+    assert [len(messages[i]["manifest"]) for i in batches] == [1, 1, 1]
+    bookmarks = [
+        messages[i + 1]["value"]["bookmarks"]["tpch_sf1-supplier"][
+            "replication_key_value"
+        ]
+        for i in batches
+    ]
+    assert bookmarks == [2, 4, 5]

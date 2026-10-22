@@ -30,7 +30,7 @@ from singer_sdk.streams.core import REPLICATION_FULL_TABLE, REPLICATION_INCREMEN
 from snowflake.sqlalchemy import URL
 from sqlalchemy.sql import text
 
-from tap_snowflake.batch import SnowflakeArrowBatchWriter
+from tap_snowflake.batch import rechunk, write_arrow_file
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -440,9 +440,11 @@ class SnowflakeStream(SQLStream):
 
         self._write_starting_replication_value(context)
 
-        # New: Collect the max value for the replication column.
+        # New: Collect the max value for the replication column. The Arrow path
+        # bookmarks each file as it's written instead, and a max taken before the
+        # sync could be behind those bookmarks if rows arrive during the sync.
         max_replication_key_value = None
-        if self.replication_key:
+        if self.replication_key and batch_config.encoding.format != "arrow":
             table_profile: TableProfile = self.connector.get_table_profile(  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                 full_table_name=self.fully_qualified_name,
                 stats={ProfileStats.COLUMN_MAX_VALUE},
@@ -642,24 +644,37 @@ class SnowflakeStream(SQLStream):
         (``fetch_arrow_batches``) via the raw DBAPI cursor underlying the
         SQLAlchemy connection, so results stream directly to Arrow with no
         intermediate stage unload/download or JSON round-trip.
+
+        Each file is yielded as soon as it's written, so `_sync_batches` emits its
+        BATCH message, then STATE bookmarking the file's last replication key
+        value. Rows are ordered by the replication key, so an interrupted sync
+        resumes after the last written file.
         """
         if not self.selected:
             return
 
         query = self._build_select(context)
-        writer = SnowflakeArrowBatchWriter(
-            stream_name=self.name,
-            storage=batch_config.storage,
-            batch_size=batch_config.batch_size,
-        )
         result = self.connector.execute(query)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
         arrow_batches = result.cursor.fetch_arrow_batches(
             force_microsecond_precision=True,
         )
-        for table in arrow_batches:
-            writer.write(table)
-        writer.flush()
-        yield (batch_config.encoding, writer.files)
+        # TODO(edgarrmondragon): Return `arrow_batches` from `get_record_batches`.
+        # https://github.com/meltano/sdk/issues/3830
+        # Once the SDK supports that hook, it rechunks, writes the files and advances
+        # state, so this loop and `tap_snowflake/batch.py` can be deleted.
+        key = self.replication_key
+        for table in rechunk(arrow_batches, batch_config.batch_size):
+            url = write_arrow_file(
+                table,
+                storage=batch_config.storage,
+                stream_name=self.name,
+            )
+            if key and key in table.column_names:
+                self._increment_stream_state(
+                    {key: table[key][-1].as_py()},
+                    context=context,
+                )
+            yield batch_config.encoding, [url]
 
     def _build_select(self, context: types.Context | None = None) -> Select:
         """Build the SELECT statement shared by RECORD and Arrow-BATCH sync paths.
