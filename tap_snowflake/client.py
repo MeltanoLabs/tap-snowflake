@@ -422,14 +422,18 @@ class SnowflakeStream(SQLStream):
     ) -> None:
         """Sync batches, emitting BATCH messages.
 
-        This is a proposed replacement for the SDK internal SQLStream._sync_baches.
+        This is a proposed replacement for the SDK internal SQLStream._sync_batches.
         Per: https://github.com/meltano/sdk/issues/976
 
-        This version stores the max replication value before batch sync starts, and then
-        increments the stream state with this value after the sync operation completes.
+        For the internal-stage (JSONL) path, this version stores the max replication
+        value before batch sync starts, and then increments the stream state with this
+        value after the sync operation completes. Since any FULL_TABLE sync operations
+        may subsequently be run as INCREMENTAL, the querying of the max value is not
+        dependent upon running in INCREMENTAL mode.
 
-        Since any FULL_TABLE sync operations may subsequently be run as INCREMENTAL,
-        the querying of the max value is not dependent upon running in INCREMENTAL mode.
+        The Arrow path skips that query: it bookmarks each file as it's written (see
+        `get_batches_via_arrow_fetch`), and a max taken before the sync could be behind
+        those bookmarks if rows arrive during the sync.
 
         Args:
             batch_config: The batch configuration.
