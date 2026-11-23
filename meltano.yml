@@ -25,6 +25,15 @@ plugins:
     - name: private_key_passphrase
       kind: password
       sensitive: true
+    - name: workload_identity_provider
+      kind: options
+      options:
+      - label: AWS
+        value: AWS
+      - label: Azure
+        value: AZURE
+      - label: Google Cloud
+        value: GCP
     - name: account
       kind: password
     - name: role

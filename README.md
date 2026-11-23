@@ -47,13 +47,18 @@ environment variable is set either in the terminal context or in the `.env` file
 
 ### Source Authentication and Authorization
 
-This tap supports two authentication methods:
+This tap supports these authentication methods:
 - Standard `username` and `password` auth
 - [Key Pair Authentication](https://docs.snowflake.com/en/user-guide/key-pair-auth)
+- [Workload Identity Federation](https://docs.snowflake.com/en/user-guide/workload-identity-federation)
 
 #### Key Pair Authentication
 
 Key Pair authentication can be enabled by specifing either the `private_key` of the `private_key_path`, and optionally the `private_key_passphrase` if required.
+
+#### Workload Identity Federation
+
+Set `workload_identity_provider` to `AWS`, `AZURE` or `GCP` to authenticate as the cloud identity the tap runs as, such as an AWS IAM role, without a password or key. `user` must be a Snowflake service user with a matching workload identity, and `password` and the private key settings must be left unset.
 
 ### Enabling Batch Messaging
 

@@ -28,8 +28,9 @@ class TapSnowflake(SQLTap):
             required=False,
             secret=True,
             description=(
-                "The password for your Snowflake user. One of "
-                "[`password`, `private_key`, `private_key_path`] is required."
+                "The password for your Snowflake user. One of [`password`, "
+                "`private_key`, `private_key_path`, `workload_identity_provider`] "
+                "is required."
             ),
         ),
         th.Property(
@@ -38,8 +39,9 @@ class TapSnowflake(SQLTap):
             required=False,
             secret=True,
             description=(
-                "The private key is used to connect to snowflake. One of "
-                "[`password`, `private_key`, `private_key_path`] is required."
+                "The private key is used to connect to snowflake. One of [`password`, "
+                "`private_key`, `private_key_path`, `workload_identity_provider`] "
+                "is required."
             ),
         ),
         th.Property(
@@ -49,7 +51,7 @@ class TapSnowflake(SQLTap):
             description=(
                 "Path to where the private key is stored. The private key is used "
                 "to connect to snowflake. One of [`password`, `private_key`, "
-                "`private_key_path`] is required."
+                "`private_key_path`, `workload_identity_provider`] is required."
             ),
         ),
         th.Property(
@@ -67,6 +69,18 @@ class TapSnowflake(SQLTap):
             description=(
                 "If authentication should be done using SSO (via external browser). "
                 "See SSO browser authentication."
+            ),
+        ),
+        th.Property(
+            "workload_identity_provider",
+            th.StringType,
+            required=False,
+            allowed_values=["AWS", "AZURE", "GCP"],
+            description=(
+                "Authenticate with workload identity federation, as the cloud "
+                "identity the tap runs as, instead of a password or key. One of "
+                "`AWS`, `AZURE` or `GCP`. See [Workload identity federation]"
+                f"({SFLAKE_DOCS}/workload-identity-federation)."
             ),
         ),
         th.Property(
