@@ -54,6 +54,7 @@ class SnowflakeAuthMethod(Enum):
     BROWSER = 1
     PASSWORD = 2
     KEY_PAIR = 3
+    WORKLOAD_IDENTITY = 4
 
 
 class ProfileStats(Enum):
@@ -136,17 +137,25 @@ class SnowflakeConnector(SQLConnector):
         if self.config.get("use_browser_authentication"):
             return SnowflakeAuthMethod.BROWSER
 
-        valid_auth_methods = {"private_key", "private_key_path", "password"}
+        valid_auth_methods = {
+            "private_key",
+            "private_key_path",
+            "password",
+            "workload_identity_provider",
+        }
         config_auth_methods = [x for x in self.config if x in valid_auth_methods]
         if len(config_auth_methods) != 1:
             msg = (
-                "Neither password nor private key was provided for "
-                "authentication. For password-less browser authentication via SSO, "
-                "set use_browser_authentication config option to True."
+                "Exactly one of password, private key, or workload identity provider "
+                "must be provided for authentication. For password-less browser "
+                "authentication via SSO, set use_browser_authentication config option "
+                "to True."
             )
             raise ConfigValidationError(msg)
         if config_auth_methods[0] in ["private_key", "private_key_path"]:
             return SnowflakeAuthMethod.KEY_PAIR
+        if config_auth_methods[0] == "workload_identity_provider":
+            return SnowflakeAuthMethod.WORKLOAD_IDENTITY
         return SnowflakeAuthMethod.PASSWORD
 
     def get_sqlalchemy_url(self, config: dict) -> str:
@@ -193,6 +202,11 @@ class SnowflakeConnector(SQLConnector):
         }
         if self.auth_method == SnowflakeAuthMethod.KEY_PAIR:
             connect_args["private_key"] = self.get_private_key()
+        elif self.auth_method == SnowflakeAuthMethod.WORKLOAD_IDENTITY:
+            connect_args["authenticator"] = "WORKLOAD_IDENTITY"
+            connect_args["workload_identity_provider"] = self.config[
+                "workload_identity_provider"
+            ]
 
         engine = sqlalchemy.create_engine(
             self.sqlalchemy_url,
